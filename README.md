@@ -9,6 +9,9 @@ I decided to write this program during the COVID-19 lockdown (~March 2020).  Con
 
 ## Features ##
   * Quick and easy selection of event and photos
+    * Event/photos from the start of the group
+    * Highlight events with no photos
+  * Intelligent auto-refresh of data
   * High Resolution photos
   * Meetup API version 3
 
@@ -36,6 +39,7 @@ I decided to write this program during the COVID-19 lockdown (~March 2020).  Con
 
 ## Notes ##
   * All downloaded content and cache file are located in the application directory
+  * Important files:
     * access.json (your meetup's access token json)
     * groups.json (information about your subscribed group)
     * gid-xxxxx (group directory. Events & albums information for the group are stored here)
@@ -45,3 +49,5 @@ I decided to write this program during the COVID-19 lockdown (~March 2020).  Con
 ## Future ##
   * Asyncio download
   * IPTC tag on downloaded photo
+
+![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/screenshot1.png "Screenshot 1")
