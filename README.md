@@ -1,9 +1,9 @@
-# ![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/logo.png "Logo") Python/Tk Meetup Photos Downloader / 14-Jun-2020 #
+![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/logo.png "Logo")
+
+# Python/Tk Meetup Photos Downloader / 14-Jun-2020 #
 
 ## Description ##
 Python/Tk Meetup Photos Downloader was created to help you download your meetup events' photos easily.
-
-*I wrote this program during the COVID-19 lockdown (~April 2020).  Concept/idea was from [Ken Courville](https://github.com/krcourville/meetup-photo-download)'s program, which was no longer functional.* 
 
 ## Features ##
   * Quick and easy selection of event and photos
@@ -18,11 +18,12 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
   * Python 3.8.0
   * Windows 10 64-bit
 
+*I developed this during the COVID-19 lockdown (~April 2020). Concept/idea was from [Ken Courville](https://github.com/krcourville/meetup-photo-download)'s program, which was no longer functional.* 
+
 ## Installation ##
   1. Install Python
   2. Download zip file
   3. Extract zip file
-  * No special permission needed
 
 ## Configuration ##
   * Login to [Meetup](https://www.meetup.com/)
