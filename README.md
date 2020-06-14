@@ -28,10 +28,10 @@ I decided to write this program during the COVID-19 lockdown (~March 2020).  Con
   * Login to your meetup's account
   * Visit https://www.meetup.com/meetup_api/
   * Apply for your 'OAuth Consumers' key 
-  * Follow the program setup steps to get going
 
 ## Usage ##
   * Run tk-meetup-dl.py
+    * first time running, would guide you through to obtain your 'access token'
   * Select the group
   * Select the event
   * Select the photos
