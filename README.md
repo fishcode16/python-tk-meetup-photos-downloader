@@ -9,8 +9,9 @@ I decided to write this program during the COVID-19 lockdown (~March 2020).  Con
 
 ## Features ##
   * Quick and easy selection of event and photos
-    * Event/photos from the start of the group
+    * Event/photos since group creation
     * Highlight events with no photos
+    * Quick access to meetup event's web page
   * Intelligent auto-refresh of data
   * High Resolution photos
   * Meetup API version 3
