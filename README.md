@@ -50,4 +50,5 @@ I decided to write this program during the COVID-19 lockdown (~March 2020).  Con
   * Asyncio download
   * IPTC tag on downloaded photo
 
+## Screenshot ##
 ![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/screenshot1.png "Screenshot 1")
