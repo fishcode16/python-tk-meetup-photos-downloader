@@ -15,8 +15,8 @@ from urllib.parse import urlparse
 
 #-------------------------------------------------------------------------
 #global variables
-version = '1.0'
-release_date = '14-Jun-2020'
+version = '1.01'
+release_date = '16-Jun-2020'
 script_name = 'Python/Tk Meetup Photos Downloader'
 github_url = 'https://github.com/fishcode16/python-tk-meetup-photos-downloader'
 
@@ -943,7 +943,7 @@ kyMHi+DkyMEaeLz/D2sOoz1TsPKvAAAAAElFTkSuQmCC"
     about4_0.grid(row=4, column=0, sticky='e', pady=1)
     about4_1 = ttk.Label(frame1, text=github_url[:35] + '...', cursor='hand2', foreground='blue')
     about4_1.grid(row=4, column=1, sticky='w')
-    about4_1.bind('<Button-1>', lambda e: webbrowser.open(url, 1))
+    about4_1.bind('<Button-1>', lambda e: webbrowser.open(github_url, 1))
 
     div2 = ttk.Separator(frame1, orient='horizontal')
     div2.grid(row=5, column=0, columnspan=2, sticky='ew', pady=4)
@@ -1033,11 +1033,12 @@ window.resizable(False, False)
 menu = tk.Menu(window)
 
 file_item = tk.Menu(menu, tearoff=0)
-file_item.add_command(label='Help', command=lambda: webbrowser.open(github_url, 1))
 file_item.add_command(label='About', command=about_window)
 file_item.add_separator()
 file_item.add_command(label='Exit', command=lambda: window.destroy())
 menu.add_cascade(label='File', menu=file_item)
+menu.add_command(label='Help', command=lambda: webbrowser.open(github_url, 1))
+
 
 window.config(menu=menu)
 
