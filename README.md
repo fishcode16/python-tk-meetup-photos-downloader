@@ -34,7 +34,6 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
   * Run *tk-mpd-config.py*
   * Read the [HOWTO-CONFIG](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/HOWTO-CONFIG.md)
 
-
 ## Usage ##
   * Run *tk-mpd.py*
   * Select the group
