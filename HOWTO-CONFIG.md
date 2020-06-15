@@ -18,7 +18,7 @@
 
 6. If there is no error, you will be redirected to your "Redirect URI" website. Look at your web browser address bar. Copy the "Code" key
 
-![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/screenshot2-3.jpg "Screenshot 2-3")
+![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/screenshot2-3.png "Screenshot 2-3")
 
 7. Enter the "Code" key and click on "Request for Access Token" button.
 
