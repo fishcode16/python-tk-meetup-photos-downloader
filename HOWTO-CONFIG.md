@@ -11,8 +11,8 @@
 ![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/screenshot2-1.png "Screenshot 2-1")
 
 5. Click on "Create Authorization URL" button
-A "Authorization URL" will be generated. You can either click on the "Open URL" button to send the URL to your web browser or you can paste the URL into your browser address bar.
-__NOTICE__ You might be prompt to login to your Meetup account, if the browser is unable to.
+  * A "Authorization URL" will be generated. You can either click on the "Open URL" button to send the URL to your web browser or you can paste the URL into your browser address bar.
+  * __NOTICE__ You might be prompt to login to your Meetup account, if the browser is unable to.
 
 ![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/screenshot2-2.png "Screenshot 2-2")
 
