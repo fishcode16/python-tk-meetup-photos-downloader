@@ -2,19 +2,15 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
 
-import datetime
-import os
-import sys
-import json
 import requests
 import webbrowser
 from urllib.parse import urlparse
 
 #-------------------------------------------------------------------------
 #global variables
-version = '1.0'
-release_date = '14-Jun-2020'
-github_url = 'https://github.com/fishcode16/python-tk-meetup-photos-downloader'
+version = '1.01'
+release_date = '16-Jun-2020'
+github_url = 'https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/HOWTO-CONFIG.md'
 auth_url = ''
 
 #-------------------------------------------------------------------------
@@ -60,8 +56,7 @@ def create_url():
         auth_url = 'https://secure.meetup.com/oauth2/authorize' + \
             '?client_id=' + str(key) + \
             '&response_type=code' + \
-            '&redirect_uri=' + str(redirect_uri) + \
-            '&set_mobile=on'
+            '&redirect_uri=' + str(redirect_uri)
        
         #copy the URL to clipboard
         window.clipboard_clear()
@@ -209,10 +204,9 @@ window.resizable(False, False)
 menu = tk.Menu(window)
 
 file_item = tk.Menu(menu, tearoff=0)
-file_item.add_command(label='Help', command=lambda: webbrowser.open(github_url, 1))
-file_item.add_separator()
 file_item.add_command(label='Exit', command=lambda: window.destroy())
 menu.add_cascade(label='File', menu=file_item)
+menu.add_command(label='Help', command=lambda: webbrowser.open(github_url, 1))
 
 window.config(menu=menu)
 

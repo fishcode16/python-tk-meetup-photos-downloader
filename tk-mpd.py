@@ -239,7 +239,7 @@ def group_r_clicked(event):
         r_click_url = group_json_data[g_index]['link']
 
         #mouse pointer over item
-        r_click_popup.tk_popup(event.x_root, event.y_root, 0)
+        r_click_popup1.tk_popup(event.x_root, event.y_root, 0)
 
     return
 
@@ -396,13 +396,22 @@ def event_clicked(event):
 def event_r_clicked(event):
     "right click, open meetup page"
 
-    global r_click_url
+    global r_click_url, r_click_album_url
 
     x = event_list.identify_row(event.y)
     if x:
         selected_data = event_list.item(x)
         g_index = selected_data['values'][0]
         r_click_url = event_json_data[g_index]['link']
+
+        try:
+            id = event_json_data[g_index]['photo_album']['id']
+            r_click_album_url = 'https://www.meetup.com/' + grp_url + '/photos/all_photos/?photoAlbumId=' + str(id)
+            r_click_popup.entryconfig("Album Page", state="normal")
+
+        except:
+            r_click_album_url = ''
+            r_click_popup.entryconfig("Album Page", state="disabled")
 
         #mouse pointer over item
         r_click_popup.tk_popup(event.x_root, event.y_root, 0)
@@ -943,7 +952,7 @@ kyMHi+DkyMEaeLz/D2sOoz1TsPKvAAAAAElFTkSuQmCC"
     about4_0.grid(row=4, column=0, sticky='e', pady=1)
     about4_1 = ttk.Label(frame1, text=github_url[:35] + '...', cursor='hand2', foreground='blue')
     about4_1.grid(row=4, column=1, sticky='w')
-    about4_1.bind('<Button-1>', lambda e: webbrowser.open(url, 1))
+    about4_1.bind('<Button-1>', lambda e: webbrowser.open(github_url, 1))
 
     div2 = ttk.Separator(frame1, orient='horizontal')
     div2.grid(row=5, column=0, columnspan=2, sticky='ew', pady=4)
@@ -1033,21 +1042,28 @@ window.resizable(False, False)
 menu = tk.Menu(window)
 
 file_item = tk.Menu(menu, tearoff=0)
-file_item.add_command(label='Help', command=lambda: webbrowser.open(github_url, 1))
-file_item.add_command(label='About', command=about_window)
-file_item.add_separator()
 file_item.add_command(label='Exit', command=lambda: window.destroy())
 menu.add_cascade(label='File', menu=file_item)
+
+help_item = tk.Menu(menu, tearoff=0)
+help_item.add_command(label='Github', command=lambda: webbrowser.open(github_url, 1))
+help_item.add_command(label='About', command=about_window)
+menu.add_cascade(label='Help', menu=help_item)
 
 window.config(menu=menu)
 
 #---
 
 r_click_popup = tk.Menu(window, tearoff=0, fg='blue')
-r_click_popup.add_command(label="Open meetup", command=lambda: webbrowser.open(r_click_url, 1))
+r_click_popup.add_command(label="Event page", command=lambda: webbrowser.open(r_click_url, 1))
+r_click_popup.add_command(label="Album Page", command=lambda: webbrowser.open(r_click_album_url, 1))
+
+r_click_popup1 = tk.Menu(window, tearoff=0, fg='blue')
+r_click_popup1.add_command(label="Group page", command=lambda: webbrowser.open(r_click_url, 1))
 
 r_click_popup2 = tk.Menu(window, tearoff=0, fg='blue')
 r_click_popup2.add_command(label="Delete local file", command=delete_local_file)
+
 
 #------------------------------------------------------------------
 #group area
