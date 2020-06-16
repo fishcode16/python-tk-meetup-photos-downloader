@@ -53,7 +53,6 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
       * album-xxxxxxxxx.json (photo album information)
 
 ## Future ##
-  * event with more than 500 photos (multiple albums)
   * asyncio download
   * IPTC tag on downloaded photo
 
