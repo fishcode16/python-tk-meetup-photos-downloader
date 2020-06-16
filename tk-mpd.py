@@ -239,7 +239,7 @@ def group_r_clicked(event):
         r_click_url = group_json_data[g_index]['link']
 
         #mouse pointer over item
-        r_click_popup.tk_popup(event.x_root, event.y_root, 0)
+        r_click_popup1.tk_popup(event.x_root, event.y_root, 0)
 
     return
 
@@ -1042,12 +1042,13 @@ window.resizable(False, False)
 menu = tk.Menu(window)
 
 file_item = tk.Menu(menu, tearoff=0)
-file_item.add_command(label='About', command=about_window)
-file_item.add_separator()
 file_item.add_command(label='Exit', command=lambda: window.destroy())
 menu.add_cascade(label='File', menu=file_item)
-menu.add_command(label='Help', command=lambda: webbrowser.open(github_url, 1))
 
+help_item = tk.Menu(menu, tearoff=0)
+help_item.add_command(label='Github', command=lambda: webbrowser.open(github_url, 1))
+help_item.add_command(label='About', command=about_window)
+menu.add_cascade(label='Help', menu=help_item)
 
 window.config(menu=menu)
 
@@ -1057,8 +1058,12 @@ r_click_popup = tk.Menu(window, tearoff=0, fg='blue')
 r_click_popup.add_command(label="Event page", command=lambda: webbrowser.open(r_click_url, 1))
 r_click_popup.add_command(label="Album Page", command=lambda: webbrowser.open(r_click_album_url, 1))
 
+r_click_popup1 = tk.Menu(window, tearoff=0, fg='blue')
+r_click_popup1.add_command(label="Group page", command=lambda: webbrowser.open(r_click_url, 1))
+
 r_click_popup2 = tk.Menu(window, tearoff=0, fg='blue')
 r_click_popup2.add_command(label="Delete local file", command=delete_local_file)
+
 
 #------------------------------------------------------------------
 #group area
