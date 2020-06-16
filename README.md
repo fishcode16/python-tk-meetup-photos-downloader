@@ -57,6 +57,9 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
   * asyncio download
   * IPTC tag on downloaded photo
 
-## Screenshot ##
-![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/screenshot1.png "Screenshot 1")
+## Screenshots ##
+
+![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/screenshot1-1.png "Screenshot 1")
+
+![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/screenshot1-2.jpg "Screenshot 2")
 
