@@ -2,16 +2,59 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
 
+import datetime
+import os
 import requests
 import webbrowser
 from urllib.parse import urlparse
 
 #-------------------------------------------------------------------------
 #global variables
-version = '1.01'
+version = '1.02'
 release_date = '16-Jun-2020'
 github_url = 'https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/HOWTO-CONFIG.md'
 auth_url = ''
+
+#-------------------------------------------------------------------------
+
+def check_step_1_input():
+    "check step 1 inputs"
+
+    global key, secret, redirect_uri
+    
+    #retrieve data from input box
+    key =  key2_1.get().strip(' ')
+    secret = secret3_1.get().strip(' ')
+    redirect_uri = redirect_uri4_1.get().strip(' ')
+
+    e_msg = []
+    
+    if len(key) != 26:          #key should be 26 characters
+        e_msg.append('Invalid Key (should be 26 characters)')
+
+    if len(secret) != 26:       #secret should be 26 characters
+        e_msg.append('Invalid Secret (should be 26 characters)')
+
+    if redirect_uri == '':      #is there data?
+        e_msg.append('Missing URI')
+    else:
+        #validate the URL
+        parsed_url = urlparse(redirect_uri)
+        scheme = parsed_url.scheme
+        hostname = parsed_url.hostname
+
+        if (scheme != 'https' and scheme != 'http'):
+            e_msg.append('Invalid URI (should be http or https)')
+        elif not(hostname):
+            e_msg.append('Invalid URI (missing hostname)')
+
+    if len(e_msg) != 0:     #there are error message(s), print them out
+        msgbox1['state'] = 'normal'
+        for x in e_msg:
+            msgbox1.insert('end', x + '\n', 'err')
+        msgbox1['state'] = 'disabled'
+
+    return len(e_msg)
 
 #-------------------------------------------------------------------------
 
@@ -20,39 +63,11 @@ def create_url():
 
     global auth_url
     
-    #retrieve data from input box
-    key =  key2_1.get().strip(' ')
-    secret = secret3_1.get().strip(' ')
-    redirect_uri = redirect_uri4_1.get().strip(' ')
-
-    clear_status()
-   
-    e_msg = []
+    clear_status_1()
+    clear_status_2()
     
-    #key and secrect should be 26 characters
-    if len(key) != 26: 
-        e_msg.append('Invalid Key (should be 26 characters)')
+    if not(check_step_1_input()):       #check inputs
 
-    if len(secret) != 26:
-        e_msg.append('Invalid Secret (should be 26 characters)')
-
-    #validate the URL
-    if redirect_uri == '':
-        e_msg.append('Missing URI')
-        
-    else:
-        parsed_url = urlparse(redirect_uri)
-        scheme = parsed_url.scheme
-        hostname = parsed_url.hostname
-
-        if (scheme != 'https' and scheme != 'http'): # or not(hostname):
-            e_msg.append('Invalid URI (should be http or https)')
-
-
-    msgbox1['state'] = 'normal'
-
-    #seems valid, generate a URL
-    if len(e_msg) == 0:
         auth_url = 'https://secure.meetup.com/oauth2/authorize' + \
             '?client_id=' + str(key) + \
             '&response_type=code' + \
@@ -62,21 +77,18 @@ def create_url():
         window.clipboard_clear()
         window.clipboard_append(auth_url)
 
+        #print out URL
+        msgbox1['state'] = 'normal'
         msgbox1.insert('end', auth_url)
-       
-        enable_step2()
+        msgbox1['state'] = 'disabled'
 
-    else:
-        for x in e_msg:
-            msgbox1.insert('end', x + '\n', 'err')
-
-    msgbox1['state'] = 'disabled'
+        enable_step_2()
 
     return
     
 #-------------------------------------------------------------------------
 
-def enable_step1():
+def enable_step_1():
     'enable step1 buttons/input, disable step2 buttons/input'
 
     key2_1['state'] = 'normal'
@@ -86,14 +98,13 @@ def enable_step1():
     btn4['state'] = 'disabled'
 
     code2_1['state'] = 'disabled'
-    msgbox1['state'] = 'disabled'
     btn2['state'] = 'disabled'
 
     return
 
 #-------------------------------------------------------------------------
 
-def enable_step2():
+def enable_step_2():
     'enable step2 buttons/input, disable step1 buttons/input'
     
     key2_1['state'] = 'disabled'
@@ -103,7 +114,6 @@ def enable_step2():
     btn4['state'] = 'normal'
 
     code2_1['state'] = 'normal'
-    msgbox1['state'] = 'normal'
     btn2['state'] = 'normal'
         
     return
@@ -113,35 +123,32 @@ def enable_step2():
 def clear_entry():
     'clear the content of the entry widget and text box'
 
-    enable_step2()
+    code2_1['state'] = 'normal'
     code2_1.delete(0, 'end')
     
-    enable_step1()
+    enable_step_1()
     key2_1.delete(0, 'end')
     secret3_1.delete(0, 'end')
     redirect_uri4_1.delete(0, 'end')
 
-    clear_status()
+    clear_status_1()
+    clear_status_2()
     
     return
 
 #-------------------------------------------------------------------------
 
-def clear_status():
+def clear_status_1():
     
     msgbox1['state'] = 'normal'
     msgbox1.delete('1.0', 'end')
     msgbox1['state'] = 'disabled'
 
-    window.clipboard_clear()
-
-    clear_status2()
-    
     return
 
 #-------------------------------------------------------------------------
 
-def clear_status2():
+def clear_status_2():
 
     msgbox2['state'] = 'normal'
     msgbox2.delete('1.0', 'end')
@@ -154,19 +161,15 @@ def clear_status2():
 def retreive_token_from_meetup():
     "retreive access token from meetup"
 
-    clear_status2()
+    clear_status_2()
 
     msgbox2['state'] = 'normal'
 
     code = code2_1.get()
-    if len(code) != 32: 
+    if len(code) != 32:         #code should be 32 characters
         msgbox2.insert('end', 'Invalid code (should be 32 characters)', 'err')
 
     else:
-        #retrieve data from input box
-        key =  key2_1.get().strip(' ')
-        secret = secret3_1.get().strip(' ')
-        redirect_uri = redirect_uri4_1.get().strip(' ')
 
         meetup_url = 'https://secure.meetup.com/oauth2/access'
         data = {
@@ -176,19 +179,30 @@ def retreive_token_from_meetup():
             'redirect_uri' : redirect_uri,
             'code' : code
             }
+
         r = requests.post(url=meetup_url, data=data)
 
-        msgbox2.insert('end', r.text)
-    
-        #write json to file
-        text_file = open('access.json', 'w')
-        text_file.write(r.text)
-        text_file.close()
+        if r.status_code == 200:
+            msgbox2.insert('end', r.text)
+
+            #rename current copy to .yyyymmdd-hhmmss
+            access_json = 'access.json'
+            if os.path.exists(access_json):
+                dt_str = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
+                bak_file = access_json + '.' + dt_str
+                os.rename(access_json, bak_file)
         
+            #write json to file
+            text_file = open(access_json, 'w')
+            text_file.write(r.text)
+            text_file.close()
+        else:
+            e_msg = 'Status: ' + str(r.status_code) + '\n' + r.text
+            msgbox2.insert('end', e_msg, 'err')
+
     msgbox2['state'] = 'disabled'
 
     return
-
 
 
 #---------------------------------------------------------------------------
@@ -325,8 +339,8 @@ div4 = ttk.Separator(frame0, orient='horizontal')
 div4.grid(row=y, column=0, columnspan=2, sticky='ew', pady=3)
 
 y += 1
-btn3 = ttk.Button(frame0, text='Clear all / Restart', command=clear_entry)
-btn3.grid(row=y, column=0, columnspan=2, sticky='nsew', pady=10)
+clear_btn = ttk.Button(frame0, text='Clear all / Restart', command=clear_entry)
+clear_btn.grid(row=y, column=0, columnspan=2, sticky='nsew', pady=10)
 
 
 #---------------------------------------------------------------------------
