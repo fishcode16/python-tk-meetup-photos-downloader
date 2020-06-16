@@ -11,7 +11,7 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
   * Quick and easy selection of event and photos
     * Event/photos since group creation
     * Able to filter off events with no photos
-    * Quick access to meetup event's web page
+    * Quick access to event & photo album web page at Meetup
   * Intelligent auto-refresh of cached data
   * High Resolution photos
   * Meetup API version 3
