@@ -65,4 +65,5 @@ ___
 
 ![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/screenshot1-2.jpg "Screenshot 2")
 
+___
 
