@@ -15,8 +15,8 @@ from urllib.parse import urlparse
 
 #-------------------------------------------------------------------------
 #global variables
-version = '1.01'
-release_date = '16-Jun-2020'
+version = '1.0'
+release_date = '14-Jun-2020'
 script_name = 'Python/Tk Meetup Photos Downloader'
 github_url = 'https://github.com/fishcode16/python-tk-meetup-photos-downloader'
 
@@ -396,13 +396,22 @@ def event_clicked(event):
 def event_r_clicked(event):
     "right click, open meetup page"
 
-    global r_click_url
+    global r_click_url, r_click_album_url
 
     x = event_list.identify_row(event.y)
     if x:
         selected_data = event_list.item(x)
         g_index = selected_data['values'][0]
         r_click_url = event_json_data[g_index]['link']
+
+        try:
+            id = event_json_data[g_index]['photo_album']['id']
+            r_click_album_url = 'https://www.meetup.com/' + grp_url + '/photos/all_photos/?photoAlbumId=' + str(id)
+            r_click_popup.entryconfig("Album Page", state="normal")
+
+        except:
+            r_click_album_url = ''
+            r_click_popup.entryconfig("Album Page", state="disabled")
 
         #mouse pointer over item
         r_click_popup.tk_popup(event.x_root, event.y_root, 0)
@@ -1045,7 +1054,8 @@ window.config(menu=menu)
 #---
 
 r_click_popup = tk.Menu(window, tearoff=0, fg='blue')
-r_click_popup.add_command(label="Open meetup", command=lambda: webbrowser.open(r_click_url, 1))
+r_click_popup.add_command(label="Event page", command=lambda: webbrowser.open(r_click_url, 1))
+r_click_popup.add_command(label="Album Page", command=lambda: webbrowser.open(r_click_album_url, 1))
 
 r_click_popup2 = tk.Menu(window, tearoff=0, fg='blue')
 r_click_popup2.add_command(label="Delete local file", command=delete_local_file)
