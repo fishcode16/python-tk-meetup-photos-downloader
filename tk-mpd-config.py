@@ -56,8 +56,7 @@ def create_url():
         auth_url = 'https://secure.meetup.com/oauth2/authorize' + \
             '?client_id=' + str(key) + \
             '&response_type=code' + \
-            '&redirect_uri=' + str(redirect_uri) + \
-            '&set_mobile=on'
+            '&redirect_uri=' + str(redirect_uri)
        
         #copy the URL to clipboard
         window.clipboard_clear()
