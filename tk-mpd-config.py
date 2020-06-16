@@ -233,9 +233,9 @@ frame0.grid(row=0, column=0, padx=10, pady=5)
 
 y=0
 label1 = ttk.Label(frame0, wraplength=360, justify='left', foreground='red', text=\
-'**FYI** Information entered on this screen will be use to generate an Authorization\'s \
-request URL and Access Token\'s request URL. The \'Access token\' will be saved on the \
-system. All other information are discarded. Please refer to Meetup API website for information.')
+'**FYI** Information enter on this screen are not save on the system. It will be use \
+to request for an \'Access token\' from Meetup. Please refer to Meetup API website for \
+information.')
 label1.grid(row=y, column=0, columnspan=2, sticky='nsew')
 
 y += 1
@@ -292,12 +292,12 @@ redirect_uri4_1.grid(row=y, column=1, sticky='ew')
 #---
 
 y += 1
-btn1 = ttk.Button(frame0, text='Create Authorization URL', command=create_url)
-btn1.grid(row=y, column=0, sticky='nsew', pady=10)
-
 btn4 = ttk.Button(frame0, text='Open URL', command=lambda: webbrowser.open(auth_url, 1))
-btn4.grid(row=y, column=1, sticky='nsew', pady=10)
+btn4.grid(row=y, column=0, sticky='nsew', pady=10)
 btn4['state'] = 'disabled'
+
+btn1 = ttk.Button(frame0, text='Create Authorization URL', command=create_url)
+btn1.grid(row=y, column=1, sticky='nsew', pady=10)
 
 y += 1
 msgbox1 = tk.Text(frame0, foreground='blue', background='lightgrey', state='disabled', height=4, width=10)
