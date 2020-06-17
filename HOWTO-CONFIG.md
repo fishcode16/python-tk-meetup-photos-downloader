@@ -1,5 +1,9 @@
 # HOWTO obtain your Meetup's access token #
 
+__NOTICE:__ Please note that there are slight difference between the screenshots and the application. I made some changes, but lazy to redo the screenshots. FYI.
+
+___
+
 1. Login to your Meetup account.
 
 2. Visit Meetup API to access your [OAuth Consumers](https://secure.meetup.com/meetup_api/oauth_consumers/).
