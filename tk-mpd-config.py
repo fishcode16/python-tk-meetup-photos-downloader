@@ -10,8 +10,8 @@ from urllib.parse import urlparse
 
 #-------------------------------------------------------------------------
 #global variables
-version = '1.02'
-release_date = '16-Jun-2020'
+version = '1.021'
+release_date = '17-Jun-2020'
 github_url = 'https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/HOWTO-CONFIG.md'
 auth_url = ''
 
@@ -209,7 +209,7 @@ def retreive_token_from_meetup():
 #window layout
 
 window = tk.Tk()
-window.title('Authorization Setup')
+window.title('Authorization Setup (version ' + str(version) + ')')
 window.resizable(False, False)
 
 #---------------------------------------------------------------------------
