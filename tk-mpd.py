@@ -15,8 +15,8 @@ from urllib.parse import urlparse
 
 #-------------------------------------------------------------------------
 #global variables
-version = '1.0'
-release_date = '14-Jun-2020'
+version = '1.001'
+release_date = '17-Jun-2020'
 script_name = 'Python/Tk Meetup Photos Downloader'
 github_url = 'https://github.com/fishcode16/python-tk-meetup-photos-downloader'
 
@@ -1033,7 +1033,7 @@ def fixed_map(option):
 #window layout
 
 window = tk.Tk()
-window.title(script_name)
+window.title(script_name + ' (version ' + str(version) + ')')
 window.resizable(False, False)
 
 #---------------------------------------------------------------------------
