@@ -48,6 +48,7 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
     * user.json (your user information)
     * groups.json (your subscribed groups)
     * gid-xxxxxxxxx/ (group directory. group's events & albums information stored here)
+      * 00-group-name.txt (contain name of the goup and it's creation date)
       * events-YYYY.json (year's events)
       * events.json (recent events)
       * album-xxxxxxxxx.json (photo album information)
