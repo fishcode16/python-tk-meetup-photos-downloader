@@ -6,7 +6,7 @@ from tkinter import messagebox
 
 import datetime
 import os
-import sys
+import platform
 import json
 import requests
 import webbrowser
@@ -15,24 +15,22 @@ from urllib.parse import urlparse
 
 #-------------------------------------------------------------------------
 #global variables
-version = '1.001'
-release_date = '17-Jun-2020'
-script_name = 'Python/Tk Meetup Photos Downloader'
+version = '1.1'
+release_date = '18-Jun-2020'
+program_name = 'Python/Tk Meetup Photos Downloader'
 github_url = 'https://github.com/fishcode16/python-tk-meetup-photos-downloader'
 
 meetup_api = 'https://api.meetup.com'
-grp_id = grp_name = grp_url = ''
 selected_year = 'Recent'
-event_id = event_name = event_time = ''
 
 
 #-------------------------------------------------------------------------
 
-def last_updated(filename):
-    "return number of hours since last file access time"
+def last_updated(file):
+    "return the number of hours since the file was last accessed"
 
-    if os.path.exists(filename):
-        ftime = datetime.datetime.fromtimestamp(os.path.getmtime(filename))
+    if os.path.exists(file):
+        ftime = datetime.datetime.fromtimestamp(os.path.getmtime(file))
         hours = round((datetime.datetime.now() - ftime).total_seconds() / 3600)
     else:
         hours = -1
@@ -41,35 +39,33 @@ def last_updated(filename):
 
 #-------------------------------------------------------------------------
 
-def need_update(filename, max_hr):
-    "determine if UPDATE is needed"
+def need_update(file, max_hr):
+    "determine if an update is needed"
 
-    hours = last_updated(filename)
+    hours = last_updated(file)
 
-    if hours < 0:  #file missing
-        UPDATE = 1
+    if hours < 0:  #file is missing
+        update = 1
     elif hours > max_hr:  #>max_hr
-        UPDATE = 1
+        update = 1
     else:
-        UPDATE = 0
+        update = 0
 
-    return UPDATE
+    return update
 
 #-------------------------------------------------------------------------
 
 def retrieve_token():
     "obtain access token from json file"
 
-    access_json = 'access.json'
-    UPDATE = need_update(access_json, 999999)
+    access_file = 'access.json'
 
-    if UPDATE:
+    if need_update(access_file, 999999):
         headers = ''
-        
+
     else:
-        data = json.loads((open(access_json).read()))
-        access_token = data['token_type'] + ' ' + data['access_token']
-        headers = {'Authorization': access_token}
+        data = json.loads((open(access_file).read()))
+        headers = {'Authorization': data['token_type'] + ' ' + data['access_token']}
 
     return headers
 
@@ -78,15 +74,12 @@ def retrieve_token():
 def load_json(meetup_url, params, json_file, max_hr, force_update):
     "retrieve data either from meetup or from local file"
 
-    UPDATE = need_update(json_file, max_hr)
-
-    if UPDATE or force_update:
-        #print('Refreshed from Meetup')
+    if need_update(json_file, max_hr) or force_update:
         r = requests.get(url=meetup_url, headers=headers, params=params)
         data = r.json()
 
         if r.status_code == 200:
-            #save json output to file
+            #save data/json to file
             text_file = open(json_file, 'w')
             text_file.write(json.dumps(data, indent=4))
             text_file.close()
@@ -96,10 +89,7 @@ def load_json(meetup_url, params, json_file, max_hr, force_update):
             #print('Header: ' + str(r.headers))
             #print('Text: ' + r.text)
 
-        #print('Completed')
-
     else:
-        #print('Read from file')     #debug
         data = json.loads((open(json_file).read()))
 
     return data
@@ -110,11 +100,10 @@ def user_profile(force_update):
     "retrieve member's profile"
 
     meetup_url = meetup_api + '/members/self'
-    user_json_file = 'user.json'
-    data = load_json(meetup_url, '', user_json_file, 4320, force_update)
-    user_json_data = data
+    user_file = 'user.json'
+    user_json = load_json(meetup_url, '', user_file, 4320, force_update)
 
-    member_name = data['name']
+    member_name = user_json['name']
 
     return member_name
 
@@ -123,52 +112,76 @@ def user_profile(force_update):
 def retrieve_group(force_update):
     "retrieve member's subscribed groups"
 
-    global group_json_data
-    global grp_id, grp_name, grp_url
-
-    grp_id = grp_name = grp_url = ''
+    global group_json
 
     meetup_url = meetup_api + '/self/groups'
-    group_json_file = 'groups.json'
-    data = load_json(meetup_url, '', group_json_file, 72, force_update)
-    group_json_data = data
+    group_file = 'groups.json'
+    group_json = load_json(meetup_url, '', group_file, 72, force_update)
 
-    #delete the group/treeview data
-    for x in group_list.get_children():
-        group_list.delete(x)
+    clear_group_frame()
+    clear_event_frame()
+    clear_album_frame()
 
-    clear_events_frame()
-    clear_photo_frame()
-
-    #display groups
+    g_list = []
     for x in range(200):  #meetup return 200?
         try:
             #populate the group list / treeview
-            g_name = data[x]['name']
-            g_country = data[x]['localized_country_name']
-            g_members = data[x]['members']
-            group_list.insert('', 'end', values=(x, g_name, g_country, g_members))
+            g_name    = group_json[x]['name']
+            g_country = group_json[x]['localized_country_name']
+            g_members = group_json[x]['members']
+
+            g_list.append([g_name, g_country, g_members, x])
 
             #create group directory (gid)
-            g_id = data[x]['id']
+            g_id   = group_json[x]['id']
             g_path = 'gid-' + str(g_id)
 
             if not (os.path.exists(g_path)):
                 os.mkdir(g_path)
 
+                g_created = group_json[x]['created']
+                g_created_str = datetime.datetime.fromtimestamp(g_created / 1000).strftime('%d-%b-%Y')
+                today_str = datetime.datetime.today().strftime('%H:%M, %d-%b-%Y')
+
                 g_readme_file = g_path + '/00-group-name.txt'
-                #create a text file with the group name
+                #create a text file with the group's information
                 text_file = open(g_readme_file, 'w')
-                text_file.write(g_name)
+                text_file.write('  Group: ' + g_name + '\n')
+                text_file.write('Country: ' + g_country + '\n')
+                text_file.write('Created: ' + g_created_str + '\n')
+                text_file.write('\n')
+                text_file.write('*this file was created on: ' + today_str)
                 text_file.close()
 
         except:
             break
 
+    g_list.sort()   #sort the group list
+
+    #display list of groups
+    for (g_name, g_country, g_members, x) in g_list:
+        group_list.insert('', 'end', values=(x, g_name, g_country, g_members))
+
     #status message
-    y = last_updated(group_json_file)
+    y = last_updated(group_file)
     msg = str(x) + ' groups | Last updated ' + str(y) + ' hours ago'
     group_status.set(msg)
+
+    return
+
+#---------------------------------------------------------------------------
+
+def clear_group_frame():
+    "clear group window"
+
+    global grp_id, grp_name, grp_url
+
+    grp_id = grp_name = grp_url = ''
+
+    #delete the group/treeview data
+    for x in group_list.get_children():
+        group_list.delete(x)
+
     return
 
 #---------------------------------------------------------------------------
@@ -185,16 +198,16 @@ def group_clicked(event):
         selected_data = group_list.item(x)
 
         #retrive the needed from array
-        g_index = selected_data['values'][0]
+        g_index        = selected_data['values'][0]
         selected_group = selected_data['values'][1]
 
         #only do something if the selected is different from current
         if selected_group != grp_name:
 
             #set global variable for selected group
-            grp_id = group_json_data[g_index]['id']
-            grp_name = group_json_data[g_index]['name']
-            grp_url = group_json_data[g_index]['urlname']
+            grp_id   = group_json[g_index]['id']
+            grp_name = group_json[g_index]['name']
+            grp_url  = group_json[g_index]['urlname']
 
             #delete the list
             option_year['menu'].delete(0, 'end')
@@ -203,9 +216,9 @@ def group_clicked(event):
             option_year['menu'].add_command(label='Recent', command=tk._setit(var_year, 'Recent', year_clicked))
 
             #populate, from current year till group creation year
-            g_created = group_json_data[g_index]['created']
+            g_created = group_json[g_index]['created']
             g_created_year = datetime.datetime.fromtimestamp(g_created / 1000).year
-            current_year = datetime.datetime.now().year
+            current_year = datetime.datetime.today().year
 
             for x in range(current_year, g_created_year - 1, -1):
                 option_year['menu'].add_command(label=x, command=tk._setit(var_year, x, year_clicked))
@@ -236,10 +249,10 @@ def group_r_clicked(event):
     if x:
         selected_data = group_list.item(x)
         g_index = selected_data['values'][0]
-        r_click_url = group_json_data[g_index]['link']
+        r_click_url = group_json[g_index]['link']
 
         #mouse pointer over item
-        r_click_popup1.tk_popup(event.x_root, event.y_root, 0)
+        r_click_popup2.tk_popup(event.x_root, event.y_root, 0)
 
     return
 
@@ -248,24 +261,21 @@ def group_r_clicked(event):
 def retrieve_events(year, force_update):
     "retrive events listing"
 
-    global event_json_data
-
-    #multi photo albums should be detected in this json data?
-    #how to handle?
+    global events_json
 
     meetup_url = meetup_api + '/' + grp_url + '/events'
     event_path = 'gid-' + str(grp_id) + '/'
 
     if year == 'Recent':
-        events_json_file = event_path + 'events.json'
+        events_file = event_path + 'events.json'
         params = {
             'status': 'past',
             'page': '15',
             'desc': 'true',
             'fields': 'photo_album'}
-        max_hr = 744  #31 days. recent event list
+        max_hr = 24  #recent event list
     else:
-        events_json_file = event_path + 'events-' + str(year) + '.json'
+        events_file = event_path + 'events-' + str(year) + '.json'
         params = {
             'status': 'past',
             'no_earlier_than': str(year) + '-01-01T00:00:00.000',
@@ -273,45 +283,45 @@ def retrieve_events(year, force_update):
             'fields': 'photo_album'}
         max_hr = 4320  #6 months. yearly event list
 
-    data = load_json(meetup_url, params, events_json_file, max_hr, force_update)  #744 hrs = 31 days
-    event_json_data = data
+    events_json = load_json(meetup_url, params, events_file, max_hr, force_update)  #744 hrs = 31 days
 
-    clear_photo_frame()
-    clear_events_frame()
+    clear_event_frame()
+    clear_album_frame()
 
     chkbox = all_event.get()  #checkbox status
 
-    event_count = 0
+    events_with_photo = 0
     #populate the event listing / treeview
     for x in range(500):  #max 500 per request?
         try:
-            e_name = event_json_data[x]['name'].strip()
-            e_id = event_json_data[x]['id']
+            e_name = events_json[x]['name'].strip()
+            e_id   = events_json[x]['id']
 
-            e_time = event_json_data[x]['time']
+            e_time = events_json[x]['time']
             dt_object = datetime.datetime.fromtimestamp(int(e_time) / 1000).strftime('%d-%b-%Y')
 
             try:
-                photo_count = event_json_data[x]['photo_album']['photo_count']
-                taggy = 'dummy'
-                event_count += 1
+                photo_count = events_json[x]['photo_album']['photo_count']
+                taggy = 'have_photo'
+                events_with_photo += 1
             except:
                 photo_count = 0
-                taggy = 'nophoto'
+                taggy = 'no_photo'
 
-            if chkbox or photo_count > 0:
+            # if checkbox, then display all events, else only events with photos
+            if chkbox or photo_count:
                 event_list.insert('', 'end', tags=taggy, values=(x, e_id, dt_object, e_name, photo_count))
 
         except:
             break
 
-    if chkbox == 0:  #if checkbox, then return the count of events with photos
-        x = event_count
+    if not(chkbox):  #if checkbox, then return the count of events with photos
+        x = events_with_photo
 
-    events_buttons('normal')
+    event_frame_buttons('normal')
 
     #status message
-    y = last_updated(events_json_file)
+    y = last_updated(events_file)
     msg = str(x) + ' events | Last updated ' + str(y) + ' hours ago'
     event_status.set(msg)
 
@@ -319,7 +329,7 @@ def retrieve_events(year, force_update):
 
 #---------------------------------------------------------------------------
 
-def clear_events_frame():
+def clear_event_frame():
     "clear event window"
 
     global event_id, event_name, event_time
@@ -330,7 +340,7 @@ def clear_events_frame():
     for x in event_list.get_children():
         event_list.delete(x)
 
-    events_buttons('disabled')
+    event_frame_buttons('disabled')
     event_status.set('')
 
     return
@@ -363,28 +373,23 @@ def event_clicked(event):
         selected_data = event_list.item(x)
 
         #retrive the needed from array
-        e_index = selected_data['values'][0]
-        e_id = selected_data['values'][1]
+        e_index     = selected_data['values'][0]
+        e_id        = selected_data['values'][1]
         photo_count = selected_data['values'][4]
 
         #only do something if the selected is different from current
         if e_id != event_id:
 
-            event_id = event_json_data[e_index]['id']
-            event_name = event_json_data[e_index]['name'].strip()
-            event_time = event_json_data[e_index]['time']
+            event_id   = events_json[e_index]['id']
+            event_name = events_json[e_index]['name'].strip()
+            event_time = events_json[e_index]['time']
 
             #if no photos in the event
-            if photo_count == 0:
-                #delete the treeview data
-                for x in photo_list.get_children():
-                    photo_list.delete(x)
-
-                album_status.set('No photos')
-                album_buttons('disabled')
-
-            else:
+            if photo_count:
                 retrieve_album(0)
+            else:
+                clear_album_frame()
+                album_status.set('No photos')
 
     except:
         pass
@@ -402,28 +407,28 @@ def event_r_clicked(event):
     if x:
         selected_data = event_list.item(x)
         g_index = selected_data['values'][0]
-        r_click_url = event_json_data[g_index]['link']
+        r_click_url = events_json[g_index]['link']
 
         try:
-            id = event_json_data[g_index]['photo_album']['id']
+            id = events_json[g_index]['photo_album']['id']
             r_click_album_url = 'https://www.meetup.com/' + grp_url + '/photos/all_photos/?photoAlbumId=' + str(id)
-            r_click_popup.entryconfig("Album Page", state="normal")
+            r_click_popup1.entryconfig("Album Page", state="normal")
 
         except:
             r_click_album_url = ''
-            r_click_popup.entryconfig("Album Page", state="disabled")
+            r_click_popup1.entryconfig("Album Page", state="disabled")
 
         #mouse pointer over item
-        r_click_popup.tk_popup(event.x_root, event.y_root, 0)
+        r_click_popup1.tk_popup(event.x_root, event.y_root, 0)
 
     return
 
 #---------------------------------------------------------------------------
 
-def events_buttons(status):
+def event_frame_buttons(status):
     "enable/disabled all buttons at event_frame"
 
-    event_refresh_btn['state'] = status
+    event_refresh_btn.configure(state=status)
     option_year.configure(state=status)
     event_checkbox.configure(state=status)
 
@@ -434,7 +439,7 @@ def events_buttons(status):
 def retrieve_album(force_update):
     "retrieve event photo album"
 
-    global album_json_data
+    global album_json
 
     #determine refresh, max_hr. based on event date
     #< 1 weeks, 6 hrs
@@ -463,76 +468,84 @@ def retrieve_album(force_update):
 
     #retrieve event's photo album
     meetup_url = meetup_api + '/' + grp_url + '/events/' + str(event_id) + '/photos'
-    album_json_file = 'gid-' + str(grp_id) + '/album-' + str(event_id) + '.json'
-    data = load_json(meetup_url, '', album_json_file, max_hr, force_update)
-    album_json_data = data
+    album_file = 'gid-' + str(grp_id) + '/album-' + str(event_id) + '.json'
+    album_json = load_json(meetup_url, '', album_file, max_hr, force_update)
 
-    #delete the treeview data
-    for x in photo_list.get_children():
-        photo_list.delete(x)
+    clear_album_frame()
 
-    nodl = 0
+    chkbox = all_photo.get()  #checkbox status
+
+    need_dl_count = 0
     for x in range(500):  #max 500 photos per album
         try:
-            photo = album_json_data[x]['id']
+            photo = album_json[x]['id']
             photo_filename = 'highres_' + str(photo) + '.jpeg'
 
-            member = album_json_data[x]['member']['name']
+            member = album_json[x]['member']['name']
 
-            upload_time = album_json_data[x]['updated']
+            upload_time = album_json[x]['updated']
             ftime = datetime.datetime.fromtimestamp(upload_time / 1000)
             p_date = ftime.strftime('%d-%b-%Y')
-            p_time = ftime.strftime('%I:%M %p').replace('PM', 'pm', 1).replace('AM', 'am', 1)
+            p_time = ftime.strftime('%I:%M %p').lower()
 
             #highlight photos found in folder
             p_path = str(event_id) + '/' + photo_filename
             if os.path.exists(p_path):
-                taggy = 'nodl'
-                nodl += 1
+                taggy = 'no_dl'
             else:
-                taggy = 'dummy'
+                taggy = 'need_dl'
+                need_dl_count += 1
 
-            photo_list.insert('', 'end', tags=taggy, values=(x + 1, photo_filename, p_date, p_time, member))
+            # if checkbox, then display all photos, else only display non-downloaded
+            if chkbox or taggy == 'need_dl':
+                photo_list.insert('', 'end', tags=taggy, values=(x + 1, photo_filename, p_date, p_time, member))
 
         except:
             break
 
     #disabled the buttons
-    album_buttons('disabled')
+    album_frame_buttons('disabled')
 
     #enable the refresh button
-    album_refresh_btn["state"] = 'normal'
+    album_refresh_btn.configure(state='normal')
+    album_checkbox.configure(state='normal')
 
     #enable some buttons, if not all files are downloaded
-    if x != nodl:
-        album_btn3['state'] = 'normal'
-        album_btn2['state'] = 'normal'
+    if x != need_dl_count:
+        album_none_btn.configure(state='normal')
+        album_all_btn.configure(state='normal')
 
     #enable "folder button", if folder exist
     if os.path.exists(str(event_id)):
-        album_btn4['state'] = 'normal'
+        album_folder_btn.configure(state='normal')
 
+    #if checkbox is unchecked, display the number of photos that need download
+    if not(chkbox):
+        x = need_dl_count
+
+    #use "no photos" instead of "0 photos"
+    if x:
+        msg = str(x) + ' photos'
+    else:
+        msg = 'No photos'
+        
     #status message
-    y = last_updated(album_json_file)
-    msg = str(x) + ' photos | Last updated ' + str(y) + ' hours ago'
+    y = last_updated(album_file)
+    msg = msg + ' | Last updated ' + str(y) + ' hours ago'
     album_status.set(msg)
 
     return
 
 #---------------------------------------------------------------------------
 
-def clear_photo_frame():
-    "clear the photo list"
-
-    global event_id, event_name, event_time
-
-    event_id = event_name = event_time = ''
+def clear_album_frame():
+    "clear the album/photo list"
 
     #delete the treeview data
     for x in photo_list.get_children():
         photo_list.delete(x)
 
-    album_buttons('disabled')
+    album_frame_buttons('disabled')
     album_status.set('')
 
     return
@@ -549,10 +562,10 @@ def photo_r_clicked(event):
         selected_data = photo_list.item(x)
         tag = selected_data['tags'][0]
 
-        #pop up menu, only if the file is tag with 'nodl' (ie. file exist in folder)
-        if tag == 'nodl':
+        #pop up menu, only if the file is tag with 'no_dl' (ie. file exist in folder)
+        if tag == 'no_dl':
             req_file_to_delete = selected_data['values'][1]
-            r_click_popup2.tk_popup(event.x_root, event.y_root, 0)
+            r_click_popup3.tk_popup(event.x_root, event.y_root, 0)
             #popup button will call delete_local_file
     except:
         pass
@@ -580,24 +593,25 @@ def photo_clicked(event):
     x = len(photo_list.selection())
 
     if x:
-        album_btn1['state'] = 'normal'
+        album_download_btn.configure(state='normal')
     else:
-        album_btn1['state'] = 'disabled'
+        album_download_btn.configure(state='disabled')
 
-    #report number of photos downloaded
+    #report number of photos downloaded, future
 
     return
 
 #---------------------------------------------------------------------------
 
-def album_buttons(status):
-    "enable/disabled all buttons at photo_frame"
+def album_frame_buttons(status):
+    "enable/disabled all buttons at album_frame"
 
-    album_btn4['state'] = status
-    album_btn3['state'] = status
-    album_btn2['state'] = status
-    album_btn1['state'] = status
-    album_refresh_btn["state"] = status
+    album_folder_btn.configure(state=status)
+    album_none_btn.configure(state=status)
+    album_all_btn.configure(state=status)
+    album_download_btn.configure(state=status)
+    album_checkbox.configure(state=status)
+    album_refresh_btn.configure(state=status)
 
     return
 
@@ -610,7 +624,7 @@ def album_select_all():
         photo_list.selection_add(x)
         #https://youtu.be/zoLOXN_9EH0
 
-    album_btn1['state'] = 'normal'  #enable download button
+    album_download_btn.configure(state='normal')  #enable download button
 
     return
 
@@ -623,7 +637,8 @@ def album_select_none():
         photo_list.selection_remove(x)
         #https://youtu.be/zoLOXN_9EH0
 
-    album_btn1['state'] = 'disabled'  #disable download button, since nothing was selected
+    #disable download button, since nothing was selected
+    album_download_btn.configure(state='disabled')
 
     return
 
@@ -653,16 +668,16 @@ def download_photos(dl_list):
 
     msg_box = tk.Text(download_win, height=16, width=42)
     msg_box.grid(row=0, column=0, padx=10, pady=10)
-    msg_box.tag_config('err', background='red', foreground='white')
-    msg_box.tag_config('ok', foreground='green')
-    msg_box.tag_config("sum", foreground="blue")
+    msg_box.tag_configure('err', background='red', foreground='white')
+    msg_box.tag_configure('ok', foreground='green')
+    msg_box.tag_configure("sum", foreground="blue")
 
     progress_bar = ttk.Progressbar(download_win, orient='horizontal', mode='determinate', value=0)
     progress_bar.grid(row=1, column=0, sticky='nsew', padx=20)
 
     ok_btn = ttk.Button(download_win, text='OK', command=download_win.destroy)
     ok_btn.grid(row=2, column=0, sticky='nsew', padx=10, pady=10)
-    ok_btn['state'] = 'disabled'
+    ok_btn.configure(state='disabled')
 
     position_window(download_win)
 
@@ -671,23 +686,23 @@ def download_photos(dl_list):
     if not (os.path.exists(dl_folder)):
         os.mkdir(dl_folder)
 
-    photo_count = album_json_data[0]['photo_album']['photo_count']
+    photo_count = album_json[0]['photo_album']['photo_count']
     total = len(dl_list)
     count = 0
     dl_count = 0
 
     for x in dl_list:  #max 500 photos per album
 
-        photo = album_json_data[x]['id']
+        photo = album_json[x]['id']
         photo_filename = 'highres_' + str(photo) + '.jpeg'
 
         msg_box.insert('end', '[{:3d}] '.format(x + 1) + photo_filename + ' - ')
 
         local_file = dl_folder + photo_filename
-        if not (os.path.exists(local_file)):
+        if not(os.path.exists(local_file)):
 
             #download the photo
-            hires_link = album_json_data[x]['highres_link']
+            hires_link = album_json[x]['highres_link']
             r = requests.get(url=hires_link)
             if r.status_code == 200:
 
@@ -702,8 +717,8 @@ def download_photos(dl_list):
                 #IPTCinfo when ready
 
                 #modify file access/modify time to upload date/time
-                #unable to find a way to modify the file create date/time
-                photo_date = album_json_data[x]['created']
+                #unable to find a way to modify the file creation date/time
+                photo_date = album_json[x]['created']
                 photo_date = int(photo_date / 1000)
                 os.utime(local_file, (photo_date, photo_date))
 
@@ -712,7 +727,7 @@ def download_photos(dl_list):
             else:
                 msg_text = 'ERROR\n' + \
                            'Staus Code: ' + str(r.status_code) + '\n' \
-                                                                 'Reason: ' + r.reason + '\n'
+                           'Reason: ' + r.reason + '\n'
                 msg_box.insert('end', msg_text, 'err')
 
         else:
@@ -737,11 +752,11 @@ def download_photos(dl_list):
                str(dl_count) + ' photos downloaded'
     msg_box.insert('end', msg_text, 'sum')
     msg_box.see('end')  #auto scroll text up
-    msg_box.config(state='disabled')
+    msg_box.configure(state='disabled')
 
     #---
 
-    ok_btn['state'] = 'normal'
+    ok_btn.configure(state='normal')
 
     download_win.wait_window()  #wait for 'close' of window
     window.attributes('-disabled', 0)  #enable the main window
@@ -753,14 +768,6 @@ def download_photos(dl_list):
 #---------------------------------------------------------------------------
 
 def about_window():
-    about_win = tk.Toplevel()
-    about_win.title('About')
-    about_win.resizable(False, False)
-
-    #---
-
-    frame0 = ttk.Frame(about_win)
-    frame0.grid(row=0, column=0, padx=10, pady=5)
 
     logo_b64 = "\
 iVBORw0KGgoAAAANSUhEUgAAANoAAADACAIAAADtMupxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMA\
@@ -922,59 +929,82 @@ Izky60i4Z98XGtu06QdjWvmfb6lnDqZw4ztnc0YsKEmCyXx3e+WELszwnNnmkNPrMrBy5BhbSjvHd35y
 wSJWvnXkSCI4OXKwCE6OHCyCkyMHi+DkyMEiODlysAhOjhwsgpMjB4vg5MjBIjg5crAITo4cLIKTIweL4OTIwSI4OXKwCE6OHCyC\
 kyMHi+DkyMEaeLz/D2sOoz1TsPKvAAAAAElFTkSuQmCC"
 
+    about_win = tk.Toplevel()
+    about_win.title('About')
+    about_win.resizable(False, False)
+
+    #---
+
+    frame0 = ttk.Frame(about_win)
+    frame0.grid(row=0, column=0, padx=10, pady=5)
+
     logo_img = PhotoImage(data=logo_b64)
     label_logo = ttk.Label(frame0, image=logo_img)
     label_logo.grid(row=0, column=0, pady=8)
 
-    #---
-
     frame1 = ttk.Frame(about_win)
-    frame1.grid(row=0, column=1, padx=10, pady=5)
-
-    about0_1 = ttk.Label(frame1, text=script_name, anchor='center')
-    about0_1.grid(row=0, column=0, columnspan=2)
-    about0_1.config(font=('', 12, 'bold'))
-
-    div1 = ttk.Separator(frame1, orient='horizontal')
-    div1.grid(row=1, column=0, columnspan=2, sticky='ew', pady=4)
-
-    about1_0 = ttk.Label(frame1, text='Version: ')
-    about1_0.grid(row=2, column=0, sticky='e', pady=1)
-    about1_1 = ttk.Label(frame1, text=version + ' | ' + release_date)
-    about1_1.grid(row=2, column=1, sticky='w')
-
-    about3_0 = ttk.Label(frame1, text='Author: ')
-    about3_0.grid(row=3, column=0, sticky='e', pady=1)
-    about3_1 = ttk.Label(frame1, text='KWAN')
-    about3_1.grid(row=3, column=1, sticky='w')
-
-    about4_0 = ttk.Label(frame1, text='Website: ')
-    about4_0.grid(row=4, column=0, sticky='e', pady=1)
-    about4_1 = ttk.Label(frame1, text=github_url[:35] + '...', cursor='hand2', foreground='blue')
-    about4_1.grid(row=4, column=1, sticky='w')
-    about4_1.bind('<Button-1>', lambda e: webbrowser.open(github_url, 1))
-
-    div2 = ttk.Separator(frame1, orient='horizontal')
-    div2.grid(row=5, column=0, columnspan=2, sticky='ew', pady=4)
-
-    sys5_0 = ttk.Label(frame1, text='Platform: ')
-    sys5_0.grid(row=6, column=0, sticky='e', pady=1)
-    sys5_1 = ttk.Label(frame1, text=sys.platform)
-    sys5_1.grid(row=6, column=1, sticky='w')
-
-    systext = sys.version.replace(' (', '\n(', 1).replace(r') [', ')\n[')
-    sys6_0 = ttk.Label(frame1, text='Python: ')
-    sys6_0.grid(row=7, column=0, sticky='ne', pady=1)
-    sys6_1 = ttk.Label(frame1, text=systext, justify='left')
-    sys6_1.grid(row=7, column=1, sticky='nw')
-
-    sys7_0 = ttk.Label(frame1, text='TK: ')
-    sys7_0.grid(row=8, column=0, sticky='e', pady=1)
-    sys7_1 = ttk.Label(frame1, text=tk.TkVersion)
-    sys7_1.grid(row=8, column=1, sticky='w')
+    frame1.grid(row=0, column=1, padx=(0,10), pady=(15,5), sticky='n')
 
     ok_btn = ttk.Button(about_win, text='OK', command=about_win.destroy)
-    ok_btn.grid(row=2, column=0, columnspan=2, padx=10, pady=5, sticky='nsew')
+    ok_btn.grid(row=1, column=0, columnspan=2, padx=10, pady=5, sticky='nsew')
+
+    #---
+
+    y = 0
+    prog1 = ttk.Label(frame1, text=program_name, anchor='center')
+    prog1.grid(row=y, column=0, columnspan=2)
+    prog1.configure(font=('', 12, 'bold'))
+
+    y += 1
+    div1 = ttk.Separator(frame1, orient='horizontal')
+    div1.grid(row=y, column=0, columnspan=2, sticky='ew', pady=4)
+
+    y += 1
+    prog2_0 = ttk.Label(frame1, text='Version: ')
+    prog2_0.grid(row=y, column=0, sticky='e', pady=1)
+    prog2_1 = ttk.Label(frame1, text=version)
+    prog2_1.grid(row=y, column=1, sticky='w')
+
+    y += 1
+    prog3_0 = ttk.Label(frame1, text='Website: ')
+    prog3_0.grid(row=y, column=0, sticky='e', pady=1)
+    prog3_1 = ttk.Label(frame1, text=github_url[:35] + '...', cursor='hand2', foreground='blue')
+    prog3_1.grid(row=y, column=1, sticky='w')
+    prog3_1.bind('<Button-1>', lambda e: webbrowser.open(github_url, 1))
+
+    y += 1
+    div2 = ttk.Separator(frame1, orient='horizontal')
+    div2.grid(row=y, column=0, columnspan=2, sticky='ew', pady=4)
+
+    y += 1
+    sys1_0 = ttk.Label(frame1, text='Platform: ')
+    sys1_0.grid(row=y, column=0, sticky='e', pady=1)
+    sys1_1 = ttk.Label(frame1, text=platform.machine().lower(), justify='left')
+    sys1_1.grid(row=y, column=1, sticky='w')
+
+    y += 1
+    sys2_0 = ttk.Label(frame1, text='OS: ')
+    sys2_0.grid(row=y, column=0, sticky='e', pady=1)
+    sys2_1 = ttk.Label(frame1, text=platform.platform(), justify='left')
+    sys2_1.grid(row=y, column=1, sticky='w')
+
+    y += 1
+    sys3_0 = ttk.Label(frame1, text='Python: ')
+    sys3_0.grid(row=y, column=0, sticky='e', pady=1)
+    sys3_1 = ttk.Label(frame1, text=platform.python_version(), justify='left')
+    sys3_1.grid(row=y, column=1, sticky='w')
+
+    y += 1
+    sys4_0 = ttk.Label(frame1)
+    sys4_0.grid(row=y, column=0, sticky='e', pady=1)
+    sys4_1 = ttk.Label(frame1, text=platform.python_build(), justify='left')
+    sys4_1.grid(row=y, column=1, sticky='w')
+
+    y += 1
+    sys5_0 = ttk.Label(frame1, text='Tk: ')
+    sys5_0.grid(row=y, column=0, sticky='e', pady=1)
+    sys5_1 = ttk.Label(frame1, text=tk.TkVersion)
+    sys5_1.grid(row=y, column=1, sticky='w')
 
     #---
 
@@ -1033,7 +1063,7 @@ def fixed_map(option):
 #window layout
 
 window = tk.Tk()
-window.title(script_name + ' (version ' + str(version) + ')')
+window.title(program_name + ' (version ' + str(version) + ')')
 window.resizable(False, False)
 
 #---------------------------------------------------------------------------
@@ -1046,23 +1076,23 @@ file_item.add_command(label='Exit', command=lambda: window.destroy())
 menu.add_cascade(label='File', menu=file_item)
 
 help_item = tk.Menu(menu, tearoff=0)
-help_item.add_command(label='Github', command=lambda: webbrowser.open(github_url, 1))
+help_item.add_command(label='Readme', command=lambda: webbrowser.open(github_url, 1))
 help_item.add_command(label='About', command=about_window)
 menu.add_cascade(label='Help', menu=help_item)
 
-window.config(menu=menu)
+window.configure(menu=menu)
 
 #---
 
-r_click_popup = tk.Menu(window, tearoff=0, fg='blue')
-r_click_popup.add_command(label="Event page", command=lambda: webbrowser.open(r_click_url, 1))
-r_click_popup.add_command(label="Album Page", command=lambda: webbrowser.open(r_click_album_url, 1))
-
 r_click_popup1 = tk.Menu(window, tearoff=0, fg='blue')
-r_click_popup1.add_command(label="Group page", command=lambda: webbrowser.open(r_click_url, 1))
+r_click_popup1.add_command(label="Event page", command=lambda: webbrowser.open(r_click_url, 1))
+r_click_popup1.add_command(label="Album Page", command=lambda: webbrowser.open(r_click_album_url, 1))
 
 r_click_popup2 = tk.Menu(window, tearoff=0, fg='blue')
-r_click_popup2.add_command(label="Delete local file", command=delete_local_file)
+r_click_popup2.add_command(label="Group page", command=lambda: webbrowser.open(r_click_url, 1))
+
+r_click_popup3 = tk.Menu(window, tearoff=0, fg='blue')
+r_click_popup3.add_command(label="Delete local file", command=delete_local_file)
 
 
 #------------------------------------------------------------------
@@ -1100,8 +1130,8 @@ group_refresh_btn.grid(row=1, column=1, sticky='e')
 
 #------------------------------------------------------------------
 
-div = ttk.Separator(window, orient='horizontal')
-div.grid(row=1, column=0, sticky='ew')
+div1 = ttk.Separator(window, orient='horizontal')
+div1.grid(row=1, column=0, sticky='ew', pady=(6,3))
 
 #------------------------------------------------------------------
 #event area
@@ -1127,7 +1157,7 @@ for col in lb_header:
 
 event_list.heading('Photos', anchor='e')
 
-event_list.tag_configure('nophoto', background='#F4F0FE', foreground='grey')
+event_list.tag_configure('no_photo', background='#F4F0FE', foreground='grey')
 
 #---
 
@@ -1137,8 +1167,9 @@ event_frame_status.grid(row=1, column=0, sticky='nsew')
 
 all_event = tk.IntVar()
 all_event.set(1)
-event_checkbox = ttk.Checkbutton(event_frame, text="All Events", variable=all_event, onvalue=1, offvalue=0,
-                                 command=lambda: retrieve_events(selected_year, 0))
+event_checkbox = ttk.Checkbutton(event_frame, text="All Events",
+                    variable=all_event, onvalue=1, offvalue=0,
+                    command=lambda: retrieve_events(selected_year, 0))
 event_checkbox.grid(row=1, column=1, sticky='e')
 event_checkbox.configure(state='disabled')
 
@@ -1148,40 +1179,46 @@ option_year = ttk.OptionMenu(event_frame, var_year, 'Recent', command=year_click
 option_year.grid(row=1, column=2, sticky='e')
 option_year.configure(state='disabled')
 
-event_refresh_btn = ttk.Button(event_frame, text='Refresh', command=lambda: retrieve_events(selected_year, 1),
-                               state='disabled')
+event_refresh_btn = ttk.Button(event_frame, text='Refresh', command=lambda: retrieve_events(selected_year, 1))
 event_refresh_btn.grid(row=1, column=3, sticky="e")
+event_refresh_btn.configure(state='disabled')
 
 #------------------------------------------------------------------
 
-div = ttk.Separator(window, orient='vertical')
-div.grid(row=0, column=1, rowspan=3, sticky='ns')
+div2 = ttk.Separator(window, orient='vertical')
+div2.grid(row=0, column=1, rowspan=3, sticky='ns', padx=2)
 
 #------------------------------------------------------------------
 #photo album area
 
 album_frame = ttk.Frame(window)
-album_frame.grid(row=0, column=2, rowspan=3, padx=5, pady=5, sticky='nw')
+album_frame.grid(row=0, column=2, rowspan=3, padx=5, pady=4, sticky='nw')
 
 #---
 
-album_btn4 = ttk.Button(album_frame, text='DL folder', command=lambda: os.startfile(os.path.realpath(str(event_id))), state='disabled')
-album_btn4.grid(row=0, column=0, sticky='nsew')
+y=0
+album_folder_btn = ttk.Button(album_frame, text='DL folder', command=lambda: os.startfile(os.path.realpath(str(event_id))))
+album_folder_btn.grid(row=y, column=0, sticky='nsew')
+album_folder_btn.configure(state='disabled')
 
-album_btn3 = ttk.Button(album_frame, text='Clear all', command=album_select_none, state='disabled')
-album_btn3.grid(row=0, column=1, sticky='nsew')
+album_none_btn = ttk.Button(album_frame, text='Clear all', command=album_select_none)
+album_none_btn.grid(row=y, column=1, sticky='nsew')
+album_none_btn.configure(state='disabled')
 
-album_btn2 = ttk.Button(album_frame, text='Select all', command=album_select_all, state='disabled')
-album_btn2.grid(row=0, column=2, sticky='nsew')
+album_all_btn = ttk.Button(album_frame, text='Select all', command=album_select_all)
+album_all_btn.grid(row=y, column=2, sticky='nsew')
+album_all_btn.configure(state='disabled')
 
-album_btn1 = ttk.Button(album_frame, text='Download', command=album_download, state='disabled')
-album_btn1.grid(row=0, column=3, sticky='nsew')
+album_download_btn = ttk.Button(album_frame, text='Download', command=album_download)
+album_download_btn.grid(row=y, column=3, sticky='nsew')
+album_download_btn.configure(state='disabled')
 
 #---
 
+y += 1
 lb_header = ['No', 'Photo', 'Date', 'Time', 'Uploaded by']
 photo_list = ttk.Treeview(columns=lb_header, show='headings', selectmode='extended', height=27, padding='6 6 6 6')
-photo_list.grid(row=1, column=0, columnspan=4, in_=album_frame, sticky='w')
+photo_list.grid(row=y, column=0, columnspan=4, in_=album_frame, sticky='w')
 photo_list.bind("<ButtonRelease-1>", photo_clicked)
 photo_list.bind("<Button-3>", photo_r_clicked)
 
@@ -1194,16 +1231,26 @@ photo_list.column('Uploaded by', width=100, anchor='center')
 for col in lb_header:
     photo_list.heading(col, text=col)
 
-photo_list.tag_configure('nodl', background='#F4F0FE', foreground='grey')
+photo_list.tag_configure('no_dl', background='#F4F0FE', foreground='grey')
 
 #---
 
+y += 1
 album_status = tk.StringVar()
 album_frame_status = ttk.Label(album_frame, textvariable=album_status, anchor='w')
-album_frame_status.grid(row=2, column=0, columnspan=3, sticky='w')
+album_frame_status.grid(row=y, column=0, columnspan=2, sticky='w')
 
-album_refresh_btn = ttk.Button(album_frame, text='Refresh', command=lambda: retrieve_album(1), state='disabled')
-album_refresh_btn.grid(row=2, column=3, sticky='e')
+all_photo = tk.IntVar()
+all_photo.set(1)
+album_checkbox = ttk.Checkbutton(album_frame, text="All Photos",
+                        variable=all_photo, onvalue=1, offvalue=0,
+                        command=lambda: retrieve_album(0))
+album_checkbox.grid(row=y, column=2, sticky='e')
+album_checkbox.configure(state='disabled')
+
+album_refresh_btn = ttk.Button(album_frame, text='Refresh', command=lambda: retrieve_album(1))
+album_refresh_btn.grid(row=y, column=3, sticky='e')
+album_refresh_btn.configure(state='disabled')
 
 #------------------------------------------------------------------
 
@@ -1238,12 +1285,12 @@ window.deiconify()  #bring up the window
 
 headers = retrieve_token()  #set header (access token)
 if headers == '':
-    messagebox.showerror('Error', 'access token is missing, please run tk-mpd-config.py')
+    messagebox.showerror('Error', 'Access token is missing, please run tk-mpd-config.py')
     window.destroy()
-    sys.exit(1)
-    
-#member_name = user_profile(0)
+else:
 
-retrieve_group(0)
+    #member_name = user_profile(0)
 
-window.mainloop()
+    retrieve_group(0)
+
+    window.mainloop()
