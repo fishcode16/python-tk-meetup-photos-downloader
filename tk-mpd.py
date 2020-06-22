@@ -2,7 +2,6 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import font
 from tkinter import PhotoImage
-from tkinter import messagebox
 
 import datetime
 import os
@@ -16,7 +15,7 @@ from urllib.parse import urlparse
 #-------------------------------------------------------------------------
 #global variables
 version = '1.1'
-release_date = '18-Jun-2020'
+release_date = '22-Jun-2020'
 program_name = 'Python/Tk Meetup Photos Downloader'
 github_url = 'https://github.com/fishcode16/python-tk-meetup-photos-downloader'
 
@@ -65,7 +64,11 @@ def retrieve_token():
 
     else:
         data = json.loads((open(access_file).read()))
-        headers = {'Authorization': data['token_type'] + ' ' + data['access_token']}
+
+        try:
+            headers = {'Authorization': data['token_type'] + ' ' + data['access_token']}
+        except:
+            headers = ''
 
     return headers
 
@@ -159,8 +162,8 @@ def retrieve_group(force_update):
     g_list.sort()   #sort the group list
 
     #display list of groups
-    for (g_name, g_country, g_members, x) in g_list:
-        group_list.insert('', 'end', values=(x, g_name, g_country, g_members))
+    for (g_name, g_country, g_members, y) in g_list:
+        group_list.insert('', 'end', values=(y, g_name, g_country, g_members))
 
     #status message
     y = last_updated(group_file)
@@ -412,11 +415,11 @@ def event_r_clicked(event):
         try:
             id = events_json[g_index]['photo_album']['id']
             r_click_album_url = 'https://www.meetup.com/' + grp_url + '/photos/all_photos/?photoAlbumId=' + str(id)
-            r_click_popup1.entryconfig("Album Page", state="normal")
+            r_click_popup1.entryconfig('Album Page', state='normal')
 
         except:
             r_click_album_url = ''
-            r_click_popup1.entryconfig("Album Page", state="disabled")
+            r_click_popup1.entryconfig('Album Page', state='disabled')
 
         #mouse pointer over item
         r_click_popup1.tk_popup(event.x_root, event.y_root, 0)
@@ -511,7 +514,7 @@ def retrieve_album(force_update):
     album_checkbox.configure(state='normal')
 
     #enable some buttons, if not all files are downloaded
-    if x != need_dl_count:
+    if need_dl_count:
         album_none_btn.configure(state='normal')
         album_all_btn.configure(state='normal')
 
@@ -670,7 +673,7 @@ def download_photos(dl_list):
     msg_box.grid(row=0, column=0, padx=10, pady=10)
     msg_box.tag_configure('err', background='red', foreground='white')
     msg_box.tag_configure('ok', foreground='green')
-    msg_box.tag_configure("sum", foreground="blue")
+    msg_box.tag_configure('sum', foreground='blue')
 
     progress_bar = ttk.Progressbar(download_win, orient='horizontal', mode='determinate', value=0)
     progress_bar.grid(row=1, column=0, sticky='nsew', padx=20)
@@ -681,22 +684,37 @@ def download_photos(dl_list):
 
     position_window(download_win)
 
+    #---
+    
+    #display number of files to download
+    total = len(dl_list)
+    photo_count = album_json[0]['photo_album']['photo_count']
+                                
+    msg_text = str(photo_count) + ' photos in event\'s photo album\n' + \
+               str(total) + ' photos was selected for download\n\n' + \
+               '---Downloading---\n'
+    msg_box.insert('end', msg_text, 'sum')
+    
+    window.update()     #force update
+
+    #---
+
     #create download folder if needed
     dl_folder = str(event_id) + '/'
     if not (os.path.exists(dl_folder)):
         os.mkdir(dl_folder)
 
-    photo_count = album_json[0]['photo_album']['photo_count']
-    total = len(dl_list)
+    #---
+        
     count = 0
     dl_count = 0
-
     for x in dl_list:  #max 500 photos per album
 
         photo = album_json[x]['id']
         photo_filename = 'highres_' + str(photo) + '.jpeg'
 
         msg_box.insert('end', '[{:3d}] '.format(x + 1) + photo_filename + ' - ')
+        window.update()
 
         local_file = dl_folder + photo_filename
         if not(os.path.exists(local_file)):
@@ -725,30 +743,27 @@ def download_photos(dl_list):
                 dl_count += 1
 
             else:
-                msg_text = 'ERROR\n' + \
-                           'Staus Code: ' + str(r.status_code) + '\n' \
-                           'Reason: ' + r.reason + '\n'
+                msg_text = 'err: ' + str(r.status_code) + ':' + r.reason + '\n'
                 msg_box.insert('end', msg_text, 'err')
 
         else:
             pass
             msg_box.insert('end', 'skipped\n')
 
-        count += 1
-
         msg_box.see('end')  #auto scroll text up
 
         #update progress bar
+        count += 1
         progress_bar['value'] = int(count / total * 100)
         window.update()  #force update?
 
-    msg_box.insert('end', 'Download completed\n', 'ok')
+    msg_box.insert('end', 'Download completed\n\n', 'ok')
 
+    #---
+    
     #display summary
     msg_text = '---Summary---\n' + \
                'Download folder: ' + dl_folder + '\n' + \
-               str(photo_count) + ' photos in event album\n' + \
-               str(total) + ' photos was selected\n' + \
                str(dl_count) + ' photos downloaded'
     msg_box.insert('end', msg_text, 'sum')
     msg_box.see('end')  #auto scroll text up
@@ -770,164 +785,95 @@ def download_photos(dl_list):
 def about_window():
 
     logo_b64 = "\
-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"
+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\
+tiViwvjbAAAAAElFTkSuQmCC" 
 
     about_win = tk.Toplevel()
     about_win.title('About')
@@ -942,13 +888,10 @@ kyMHi+DkyMEaeLz/D2sOoz1TsPKvAAAAAElFTkSuQmCC"
     label_logo = ttk.Label(frame0, image=logo_img)
     label_logo.grid(row=0, column=0, pady=8)
 
+    #---
+    
     frame1 = ttk.Frame(about_win)
     frame1.grid(row=0, column=1, padx=(0,10), pady=(15,5), sticky='n')
-
-    ok_btn = ttk.Button(about_win, text='OK', command=about_win.destroy)
-    ok_btn.grid(row=1, column=0, columnspan=2, padx=10, pady=5, sticky='nsew')
-
-    #---
 
     y = 0
     prog1 = ttk.Label(frame1, text=program_name, anchor='center')
@@ -957,54 +900,19 @@ kyMHi+DkyMEaeLz/D2sOoz1TsPKvAAAAAElFTkSuQmCC"
 
     y += 1
     div1 = ttk.Separator(frame1, orient='horizontal')
-    div1.grid(row=y, column=0, columnspan=2, sticky='ew', pady=4)
+    div1.grid(row=y, column=0, columnspan=2, sticky='ew', pady=6)
 
     y += 1
-    prog2_0 = ttk.Label(frame1, text='Version: ')
-    prog2_0.grid(row=y, column=0, sticky='e', pady=1)
-    prog2_1 = ttk.Label(frame1, text=version)
-    prog2_1.grid(row=y, column=1, sticky='w')
+    prog2_0 = ttk.Label(frame1, text='Version: ' + version, foreground='blue')
+    prog2_0.grid(row=y, column=0, sticky='w')
+    prog2_0.configure(font=('', 11))
+    prog2_1 = ttk.Label(frame1, text='Release Date: ' + release_date, foreground='blue')
+    prog2_1.grid(row=y, column=1, sticky='e')
+    prog2_1.configure(font=('', 11))
 
     y += 1
-    prog3_0 = ttk.Label(frame1, text='Website: ')
-    prog3_0.grid(row=y, column=0, sticky='e', pady=1)
-    prog3_1 = ttk.Label(frame1, text=github_url[:35] + '...', cursor='hand2', foreground='blue')
-    prog3_1.grid(row=y, column=1, sticky='w')
-    prog3_1.bind('<Button-1>', lambda e: webbrowser.open(github_url, 1))
-
-    y += 1
-    div2 = ttk.Separator(frame1, orient='horizontal')
-    div2.grid(row=y, column=0, columnspan=2, sticky='ew', pady=4)
-
-    y += 1
-    sys1_0 = ttk.Label(frame1, text='Platform: ')
-    sys1_0.grid(row=y, column=0, sticky='e', pady=1)
-    sys1_1 = ttk.Label(frame1, text=platform.machine().lower(), justify='left')
-    sys1_1.grid(row=y, column=1, sticky='w')
-
-    y += 1
-    sys2_0 = ttk.Label(frame1, text='OS: ')
-    sys2_0.grid(row=y, column=0, sticky='e', pady=1)
-    sys2_1 = ttk.Label(frame1, text=platform.platform(), justify='left')
-    sys2_1.grid(row=y, column=1, sticky='w')
-
-    y += 1
-    sys3_0 = ttk.Label(frame1, text='Python: ')
-    sys3_0.grid(row=y, column=0, sticky='e', pady=1)
-    sys3_1 = ttk.Label(frame1, text=platform.python_version(), justify='left')
-    sys3_1.grid(row=y, column=1, sticky='w')
-
-    y += 1
-    sys4_0 = ttk.Label(frame1)
-    sys4_0.grid(row=y, column=0, sticky='e', pady=1)
-    sys4_1 = ttk.Label(frame1, text=platform.python_build(), justify='left')
-    sys4_1.grid(row=y, column=1, sticky='w')
-
-    y += 1
-    sys5_0 = ttk.Label(frame1, text='Tk: ')
-    sys5_0.grid(row=y, column=0, sticky='e', pady=1)
-    sys5_1 = ttk.Label(frame1, text=tk.TkVersion)
-    sys5_1.grid(row=y, column=1, sticky='w')
+    ok_btn = ttk.Button(frame1, text='OK', command=about_win.destroy)
+    ok_btn.grid(row=y, column=0, columnspan=2, pady=(14,0), sticky='nsew')
 
     #---
 
@@ -1029,7 +937,7 @@ def position_window(win_ref):
 
     win_ref.withdraw()  #remove the window, thus removed the flashing most of the time
 
-    win_ref.update_idletasks()  #force to update w & h
+    win_ref.update()  #force to update w & h
     ab_w = win_ref.winfo_width()  #retreive the 'window' w & h
     ab_h = win_ref.winfo_height()
 
@@ -1041,6 +949,83 @@ def position_window(win_ref):
 
     window.attributes('-disabled', 1)  #disabled the main window
 
+    return
+
+#---------------------------------------------------------------------------
+
+def check_for_update():
+
+    url = github_url + '/raw/master/version.txt'
+    url = github_url + '/raw/dev/version.txt'
+
+    r = requests.get(url)
+    data = r.text
+
+    if r.status_code == 200:
+        (prog_ver, config_ver) = r.text.split(',')
+
+        if prog_ver > version:
+            msg = 'New version available!\n\nVersion ' + str(prog_ver)
+            mesg_box('information', 'Status', msg)
+
+        else:
+            mesg_box('information', 'Status', 'No new update available')
+    else:
+        msg = str(r.status_code) + ' : ' + r.reason
+        mesg_box('error', 'http error', msg)
+        
+    return
+
+#---------------------------------------------------------------------------
+
+def debug_info():
+
+    msg = 'Platform: ' + platform.machine().lower() + \
+          '\n: ' + platform.platform() + \
+          '\n\nPython: ' + platform.python_version() + \
+          ' / Tk: ' + str(tk.TkVersion) + \
+          '\n: ' + platform.python_build()[0] + \
+          '\n: ' + platform.python_build()[1]
+
+    mesg_box('information', 'Debug Info', msg)
+    
+    return
+
+#---------------------------------------------------------------------------
+
+def mesg_box(msg_typ, title, mesg):
+
+    mesgbox_win = tk.Toplevel()
+    mesgbox_win.title(title)
+    mesgbox_win.resizable(False, False)
+    
+    #---
+
+    frame = ttk.Frame(mesgbox_win)
+    frame.grid(row=0, column=0, padx=20, pady=10)
+
+#    ttk.Label(frame, image="::tk::icons::question")
+#    ttk.Label(frame, image="::tk::icons::warning")
+#    ttk.Label(frame, image="::tk::icons::error")
+#    ttk.Label(frame, image="::tk::icons::information")
+
+    icon = '::tk::icons::' + msg_typ
+    
+    label0 = ttk.Label(frame, image=icon)
+    label0.grid(row=0, column=0, sticky="nw")
+
+    label1 = ttk.Label(frame, text=mesg, justify='left')
+    label1.grid(row=0, column=1, padx=10)
+    
+    ok_btn = ttk.Button(frame, text='OK', command=mesgbox_win.destroy)
+    ok_btn.grid(row=1, column=0, columnspan=2, pady=(10,5), sticky='ew')
+    
+    position_window(mesgbox_win)
+
+    mesgbox_win.wait_window()  #wait for 'close' of window
+    
+    window.attributes('-disabled', 0)  #enable the main window
+    
     return
 
 #---------------------------------------------------------------------------
@@ -1063,7 +1048,7 @@ def fixed_map(option):
 #window layout
 
 window = tk.Tk()
-window.title(program_name + ' (version ' + str(version) + ')')
+window.title(program_name)
 window.resizable(False, False)
 
 #---------------------------------------------------------------------------
@@ -1076,23 +1061,31 @@ file_item.add_command(label='Exit', command=lambda: window.destroy())
 menu.add_cascade(label='File', menu=file_item)
 
 help_item = tk.Menu(menu, tearoff=0)
-help_item.add_command(label='Readme', command=lambda: webbrowser.open(github_url, 1))
+help_item.add_command(label='Website', command=lambda: webbrowser.open(github_url, 1))
+help_item.add_command(label='Debug Info', command=debug_info)
+help_item.add_command(label='Check for update', command=check_for_update)
+help_item.add_separator()
 help_item.add_command(label='About', command=about_window)
 menu.add_cascade(label='Help', menu=help_item)
+
+#menu.add_cascade(label=30*' ')   #spacer
+
+cwd = os.getcwd()
+menu.add_cascade(label='[' + cwd + ']', command=lambda: os.startfile(cwd))
 
 window.configure(menu=menu)
 
 #---
 
 r_click_popup1 = tk.Menu(window, tearoff=0, fg='blue')
-r_click_popup1.add_command(label="Event page", command=lambda: webbrowser.open(r_click_url, 1))
-r_click_popup1.add_command(label="Album Page", command=lambda: webbrowser.open(r_click_album_url, 1))
+r_click_popup1.add_command(label='Event page', command=lambda: webbrowser.open(r_click_url, 1))
+r_click_popup1.add_command(label='Album Page', command=lambda: webbrowser.open(r_click_album_url, 1))
 
 r_click_popup2 = tk.Menu(window, tearoff=0, fg='blue')
-r_click_popup2.add_command(label="Group page", command=lambda: webbrowser.open(r_click_url, 1))
+r_click_popup2.add_command(label='Group page', command=lambda: webbrowser.open(r_click_url, 1))
 
 r_click_popup3 = tk.Menu(window, tearoff=0, fg='blue')
-r_click_popup3.add_command(label="Delete local file", command=delete_local_file)
+r_click_popup3.add_command(label='Delete local file', command=delete_local_file)
 
 
 #------------------------------------------------------------------
@@ -1107,7 +1100,7 @@ lb_header = ['g_index', 'Group', 'Country', 'Members']
 group_list = ttk.Treeview(columns=lb_header, show='headings', selectmode='browse', height=6, padding='6 6 6 6')
 group_list.grid(row=0, column=0, columnspan=2, in_=group_frame)
 group_list.bind('<ButtonRelease-1>', group_clicked)
-group_list.bind("<Button-3>", group_r_clicked)
+group_list.bind('<Button-3>', group_r_clicked)
 
 group_list.column('Group', width=310, anchor='w')
 group_list.column('Country', width=150, anchor='w')
@@ -1145,7 +1138,7 @@ lb_header = ['e_index', 'e_id', 'Date', 'Event', 'Photos']
 event_list = ttk.Treeview(columns=lb_header, show='headings', selectmode='browse', height=18, padding='6 6 6 6')
 event_list.grid(row=0, column=0, columnspan=4, in_=event_frame)
 event_list.bind('<ButtonRelease-1>', event_clicked)
-event_list.bind("<Button-3>", event_r_clicked)
+event_list.bind('<Button-3>', event_r_clicked)
 
 event_list.column('Date', width=80, anchor='center')
 event_list.column('Event', width=390, anchor='w')
@@ -1167,7 +1160,7 @@ event_frame_status.grid(row=1, column=0, sticky='nsew')
 
 all_event = tk.IntVar()
 all_event.set(1)
-event_checkbox = ttk.Checkbutton(event_frame, text="All Events",
+event_checkbox = ttk.Checkbutton(event_frame, text='All Events',
                     variable=all_event, onvalue=1, offvalue=0,
                     command=lambda: retrieve_events(selected_year, 0))
 event_checkbox.grid(row=1, column=1, sticky='e')
@@ -1180,19 +1173,14 @@ option_year.grid(row=1, column=2, sticky='e')
 option_year.configure(state='disabled')
 
 event_refresh_btn = ttk.Button(event_frame, text='Refresh', command=lambda: retrieve_events(selected_year, 1))
-event_refresh_btn.grid(row=1, column=3, sticky="e")
+event_refresh_btn.grid(row=1, column=3, sticky='e')
 event_refresh_btn.configure(state='disabled')
-
-#------------------------------------------------------------------
-
-div2 = ttk.Separator(window, orient='vertical')
-div2.grid(row=0, column=1, rowspan=3, sticky='ns', padx=2)
 
 #------------------------------------------------------------------
 #photo album area
 
 album_frame = ttk.Frame(window)
-album_frame.grid(row=0, column=2, rowspan=3, padx=5, pady=4, sticky='nw')
+album_frame.grid(row=0, column=1, rowspan=3, padx=5, pady=4, sticky='nw')
 
 #---
 
@@ -1218,9 +1206,9 @@ album_download_btn.configure(state='disabled')
 y += 1
 lb_header = ['No', 'Photo', 'Date', 'Time', 'Uploaded by']
 photo_list = ttk.Treeview(columns=lb_header, show='headings', selectmode='extended', height=27, padding='6 6 6 6')
-photo_list.grid(row=y, column=0, columnspan=4, in_=album_frame, sticky='w')
-photo_list.bind("<ButtonRelease-1>", photo_clicked)
-photo_list.bind("<Button-3>", photo_r_clicked)
+photo_list.grid(row=y, column=0, columnspan=4, in_=album_frame)
+photo_list.bind('<ButtonRelease-1>', photo_clicked)
+photo_list.bind('<Button-3>', photo_r_clicked)
 
 photo_list.column('No', width=40, anchor='e')
 photo_list.column('Photo', width=160, anchor='center')
@@ -1238,11 +1226,11 @@ photo_list.tag_configure('no_dl', background='#F4F0FE', foreground='grey')
 y += 1
 album_status = tk.StringVar()
 album_frame_status = ttk.Label(album_frame, textvariable=album_status, anchor='w')
-album_frame_status.grid(row=y, column=0, columnspan=2, sticky='w')
+album_frame_status.grid(row=y, column=0, columnspan=2, sticky='nsew')
 
 all_photo = tk.IntVar()
 all_photo.set(1)
-album_checkbox = ttk.Checkbutton(album_frame, text="All Photos",
+album_checkbox = ttk.Checkbutton(album_frame, text='All Photos',
                         variable=all_photo, onvalue=1, offvalue=0,
                         command=lambda: retrieve_album(0))
 album_checkbox.grid(row=y, column=2, sticky='e')
@@ -1259,7 +1247,7 @@ style = ttk.Style()
 style.map('Treeview', foreground=fixed_map('foreground'), background=fixed_map('background'))
 #end-copy
 
-style.configure("Treeview.Heading", foreground='blue')
+style.configure('Treeview.Heading', foreground='blue')
 
 #---
 
@@ -1269,7 +1257,7 @@ hs = window.winfo_screenheight()  #height of the screen
 
 window.withdraw()  #remove window, to reduce window flashing due reposition most of the time
 
-window.update_idletasks()  #force update, to update window w & h
+window.update()  #force update, to update window w & h
 app_w = window.winfo_width()  #retreive window w & h
 app_h = window.winfo_height()
 
@@ -1285,7 +1273,8 @@ window.deiconify()  #bring up the window
 
 headers = retrieve_token()  #set header (access token)
 if headers == '':
-    messagebox.showerror('Error', 'Access token is missing, please run tk-mpd-config.py')
+    msg = 'Unable to retreive access token!!\n\nplease run "tk-mpd-config.py"'
+    mesg_box('error', 'Error', msg)
     window.destroy()
 else:
 
