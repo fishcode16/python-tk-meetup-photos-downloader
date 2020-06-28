@@ -1,6 +1,6 @@
 ![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/logo.png "Logo")
 
-# Python/Tk Meetup Photos Downloader / 14-Jun-2020 #
+# Python/Tk Meetup Photos Downloader / Version 1.1 / 28-Jun-2020 #
 
 ## Description ##
 Python/Tk Meetup Photos Downloader was created to help you download your meetup events' photos easily.
@@ -22,8 +22,9 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
 
 ## Installation ##
   1. Install Python
-  2. Download zip file
-  3. Unzip
+  2. Install Python module ($ pip install aiohttp)
+  3. Download the application zip file
+  4. Unzip
      * __IMPORTANT:__ ensure the folder is not accessible by others
 
 ## Configuration ##
@@ -55,9 +56,9 @@ __FYI:__ No scrollbar, use the mouse's scroll wheel :/
       * events-YYYY.json (year's events)
       * events.json (recent events)
       * album-xxxxxxxxx.json (photo album information)
+    * photos-xxxxxxxxx/ (downloaded photos)
 
 ## Future ##
-  * asyncio download
   * IPTC tag on downloaded photo
 
 ___
