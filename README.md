@@ -52,11 +52,12 @@ __FYI:__ No scrollbar, use the mouse's scroll wheel :/
     * user.json (your user information)
     * groups.json (your subscribed groups)
     * gid-xxxxxxxxx/ (group directory. group's events & albums information stored here)
-      * 00-group-name.txt (contain group name, creation date and country)
+      * 00-group.txt (contain group name, creation date and country. human readable format)
       * events-YYYY.json (year's events)
       * events.json (recent events)
       * album-xxxxxxxxx.json (photo album information)
     * photos-xxxxxxxxx/ (downloaded photos)
+      * 00-event.txt (contain group name, event name and date/time. human readable format)
 
 ## Future ##
   * IPTC tag on downloaded photo
