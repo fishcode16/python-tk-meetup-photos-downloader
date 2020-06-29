@@ -3,7 +3,7 @@ import tkinter.ttk as ttk
 from tkinter import font
 from tkinter import PhotoImage
 
-import datetime
+from datetime import datetime
 import os
 import platform
 import json
@@ -11,28 +11,148 @@ import requests
 import webbrowser
 from urllib.parse import urlparse
 
+import aiohttp
+import asyncio
+import async_timeout
 
 #-------------------------------------------------------------------------
 #global variables
 version = '1.1'
-release_date = '22-Jun-2020'
+release_date = '29-Jun-2020'
 program_name = 'Python/Tk Meetup Photos Downloader'
 github_url = 'https://github.com/fishcode16/python-tk-meetup-photos-downloader'
 
 meetup_api = 'https://api.meetup.com'
 selected_year = 'Recent'
 
-
+logo_b64 = "\
+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"
+    
 #-------------------------------------------------------------------------
 
 def last_updated(file):
     "return the number of hours since the file was last accessed"
 
     if os.path.exists(file):
-        ftime = datetime.datetime.fromtimestamp(os.path.getmtime(file))
-        hours = round((datetime.datetime.now() - ftime).total_seconds() / 3600)
+        ftime = datetime.fromtimestamp(os.path.getmtime(file))
+        hours = round((datetime.now() - ftime).total_seconds() / 3600)
     else:
-        hours = -1
+        hours = -1      #file is missing
 
     return hours
 
@@ -43,7 +163,7 @@ def need_update(file, max_hr):
 
     hours = last_updated(file)
 
-    if hours < 0:  #file is missing
+    if hours < 0:         #file is missing
         update = 1
     elif hours > max_hr:  #>max_hr
         update = 1
@@ -65,19 +185,24 @@ def retrieve_token():
     else:
         data = json.loads((open(access_file).read()))
 
+        #attempt to extract data from json file 
         try:
             headers = {'Authorization': data['token_type'] + ' ' + data['access_token']}
         except:
-            headers = ''
+            headers = ''      #invalid json file content
 
     return headers
 
 #-------------------------------------------------------------------------
 
 def load_json(meetup_url, params, json_file, max_hr, force_update):
-    "retrieve data either from meetup or from local file"
+    "retrieve data either from meetup or extract from local file"
 
     if need_update(json_file, max_hr) or force_update:
+
+        win_ref = popup_status_window('Retrieving...')
+
+        #retrieve data from meetup.com
         r = requests.get(url=meetup_url, headers=headers, params=params)
         data = r.json()
 
@@ -87,10 +212,13 @@ def load_json(meetup_url, params, json_file, max_hr, force_update):
             text_file.write(json.dumps(data, indent=4))
             text_file.close()
         else:
-            print('Staus Code: ' + str(r.status_code))
-            print('Reason: ' + r.reason)
+            print(meetup_url)
+            print(params)
+            print(str(r.status_code) + ':' + r.reason)
             #print('Header: ' + str(r.headers))
             #print('Text: ' + r.text)
+
+        win_ref.destroy()     #close the popup window
 
     else:
         data = json.loads((open(json_file).read()))
@@ -100,7 +228,7 @@ def load_json(meetup_url, params, json_file, max_hr, force_update):
 #-------------------------------------------------------------------------
 
 def user_profile(force_update):
-    "retrieve member's profile"
+    "retrieve member's profile, unused"
 
     meetup_url = meetup_api + '/members/self'
     user_file = 'user.json'
@@ -136,23 +264,26 @@ def retrieve_group(force_update):
             g_list.append([g_name, g_country, g_members, x])
 
             #create group directory (gid)
-            g_id   = group_json[x]['id']
-            g_path = 'gid-' + str(g_id)
+            g_id     = group_json[x]['id']
+            g_folder = 'gid-' + str(g_id)
 
-            if not (os.path.exists(g_path)):
-                os.mkdir(g_path)
+            if not(os.path.exists(g_folder)):
+                os.mkdir(g_folder)
 
-                g_created = group_json[x]['created']
-                g_created_str = datetime.datetime.fromtimestamp(g_created / 1000).strftime('%d-%b-%Y')
-                today_str = datetime.datetime.today().strftime('%H:%M, %d-%b-%Y')
+            #create 00-group.txt
+            g_readme_file = g_folder + '/00-group.txt'
+            if not(os.path.exists(g_folder)):
 
-                g_readme_file = g_path + '/00-group-name.txt'
                 #create a text file with the group's information
                 text_file = open(g_readme_file, 'w')
                 text_file.write('  Group: ' + g_name + '\n')
                 text_file.write('Country: ' + g_country + '\n')
-                text_file.write('Created: ' + g_created_str + '\n')
-                text_file.write('\n')
+
+                g_created = group_json[x]['created']
+                g_created_str = datetime.fromtimestamp(g_created / 1000).strftime('%d-%b-%Y')
+                text_file.write('Created: ' + g_created_str + '\n\n')
+
+                today_str = datetime.today().strftime('%H:%M, %d-%b-%Y')
                 text_file.write('*this file was created on: ' + today_str)
                 text_file.close()
 
@@ -220,8 +351,8 @@ def group_clicked(event):
 
             #populate, from current year till group creation year
             g_created = group_json[g_index]['created']
-            g_created_year = datetime.datetime.fromtimestamp(g_created / 1000).year
-            current_year = datetime.datetime.today().year
+            g_created_year = datetime.fromtimestamp(g_created / 1000).year
+            current_year = datetime.today().year
 
             for x in range(current_year, g_created_year - 1, -1):
                 option_year['menu'].add_command(label=x, command=tk._setit(var_year, x, year_clicked))
@@ -267,10 +398,10 @@ def retrieve_events(year, force_update):
     global events_json
 
     meetup_url = meetup_api + '/' + grp_url + '/events'
-    event_path = 'gid-' + str(grp_id) + '/'
+    g_folder = 'gid-' + str(grp_id) + '/'
 
     if year == 'Recent':
-        events_file = event_path + 'events.json'
+        events_file = g_folder + 'events.json'
         params = {
             'status': 'past',
             'page': '15',
@@ -278,7 +409,7 @@ def retrieve_events(year, force_update):
             'fields': 'photo_album'}
         max_hr = 24  #recent event list
     else:
-        events_file = event_path + 'events-' + str(year) + '.json'
+        events_file = g_folder + 'events-' + str(year) + '.json'
         params = {
             'status': 'past',
             'no_earlier_than': str(year) + '-01-01T00:00:00.000',
@@ -301,7 +432,7 @@ def retrieve_events(year, force_update):
             e_id   = events_json[x]['id']
 
             e_time = events_json[x]['time']
-            dt_object = datetime.datetime.fromtimestamp(int(e_time) / 1000).strftime('%d-%b-%Y')
+            dt_object = datetime.fromtimestamp(int(e_time) / 1000).strftime('%d-%b-%Y')
 
             try:
                 photo_count = events_json[x]['photo_album']['photo_count']
@@ -336,8 +467,10 @@ def clear_event_frame():
     "clear event window"
 
     global event_id, event_name, event_time
+    global dl_folder
 
     event_id = event_name = event_time = ''
+    dl_folder = ''
 
     #delete the event/treeview data
     for x in event_list.get_children():
@@ -369,6 +502,7 @@ def event_clicked(event):
     "show which event was selected"
 
     global event_id, event_name, event_time
+    global dl_folder
 
     try:
         #selected item (treeview)
@@ -383,9 +517,12 @@ def event_clicked(event):
         #only do something if the selected is different from current
         if e_id != event_id:
 
+            #set it, global variables
             event_id   = events_json[e_index]['id']
             event_name = events_json[e_index]['name'].strip()
             event_time = events_json[e_index]['time']
+
+            dl_folder = 'photos-' + str(event_id) + '/'
 
             #if no photos in the event
             if photo_count:
@@ -393,7 +530,6 @@ def event_clicked(event):
             else:
                 clear_album_frame()
                 album_status.set('No photos')
-
     except:
         pass
 
@@ -450,8 +586,8 @@ def retrieve_album(force_update):
     #2-4 weeks, 1 week (168 hrs)
     #> 1 month - 2 months (1488 hrs)
     #> 3 months - 6 months (4320 hrs)
-    dt_object = datetime.datetime.fromtimestamp(event_time / 1000)
-    hours = round((datetime.datetime.now() - dt_object).total_seconds() / 3600)
+    dt_object = datetime.fromtimestamp(event_time / 1000)
+    hours = round((datetime.now() - dt_object).total_seconds() / 3600)
 
     if hours > 2232:  #>3 mths, 6 mths
         #print('Event is older then 3 months')
@@ -473,7 +609,7 @@ def retrieve_album(force_update):
     meetup_url = meetup_api + '/' + grp_url + '/events/' + str(event_id) + '/photos'
     album_file = 'gid-' + str(grp_id) + '/album-' + str(event_id) + '.json'
     album_json = load_json(meetup_url, '', album_file, max_hr, force_update)
-
+   
     clear_album_frame()
 
     chkbox = all_photo.get()  #checkbox status
@@ -481,19 +617,19 @@ def retrieve_album(force_update):
     need_dl_count = 0
     for x in range(500):  #max 500 photos per album
         try:
-            photo = album_json[x]['id']
-            photo_filename = 'highres_' + str(photo) + '.jpeg'
+            hires_url = album_json[x]['highres_link']
+            photo_file = os.path.basename(hires_url)
 
             member = album_json[x]['member']['name']
 
             upload_time = album_json[x]['updated']
-            ftime = datetime.datetime.fromtimestamp(upload_time / 1000)
+            ftime = datetime.fromtimestamp(upload_time / 1000)
             p_date = ftime.strftime('%d-%b-%Y')
             p_time = ftime.strftime('%I:%M %p').lower()
 
             #highlight photos found in folder
-            p_path = str(event_id) + '/' + photo_filename
-            if os.path.exists(p_path):
+            local_file = dl_folder + photo_file
+            if os.path.exists(local_file):
                 taggy = 'no_dl'
             else:
                 taggy = 'need_dl'
@@ -501,11 +637,11 @@ def retrieve_album(force_update):
 
             # if checkbox, then display all photos, else only display non-downloaded
             if chkbox or taggy == 'need_dl':
-                photo_list.insert('', 'end', tags=taggy, values=(x + 1, photo_filename, p_date, p_time, member))
+                photo_list.insert('', 'end', tags=taggy, values=(x + 1, photo_file, p_date, p_time, member))
 
         except:
             break
-
+   
     #disabled the buttons
     album_frame_buttons('disabled')
 
@@ -518,8 +654,8 @@ def retrieve_album(force_update):
         album_none_btn.configure(state='normal')
         album_all_btn.configure(state='normal')
 
-    #enable "folder button", if folder exist
-    if os.path.exists(str(event_id)):
+    #enable "folder button", if download folder exist
+    if os.path.exists(dl_folder):
         album_folder_btn.configure(state='normal')
 
     #if checkbox is unchecked, display the number of photos that need download
@@ -527,10 +663,9 @@ def retrieve_album(force_update):
         x = need_dl_count
 
     #use "no photos" instead of "0 photos"
+    msg = 'No photos'
     if x:
         msg = str(x) + ' photos'
-    else:
-        msg = 'No photos'
         
     #status message
     y = last_updated(album_file)
@@ -556,35 +691,31 @@ def clear_album_frame():
 #---------------------------------------------------------------------------
 
 def photo_r_clicked(event):
-    "right click, open allow user to delete the photo from local folder"
+    "right click - open up meetup page. double click - open up local file"
 
-    global req_file_to_delete
+    global r_click_url
 
     try:
         x = photo_list.identify_row(event.y)
         selected_data = photo_list.item(x)
-        tag = selected_data['tags'][0]
-
-        #pop up menu, only if the file is tag with 'no_dl' (ie. file exist in folder)
-        if tag == 'no_dl':
-            req_file_to_delete = selected_data['values'][1]
+        index = selected_data['values'][0]
+        tags  = selected_data['tags'][0]
+        
+        if event.num == 3:      #1 = double clicked; 3 = right clicked
+            photo_id = album_json[index-1]['id']
+            photo_album_id = album_json[index-1]['photo_album']['id']
+            r_click_url = 'https://www.meetup.com/' + grp_url + '/photos/' + str(photo_album_id) + '/' + str(photo_id)
             r_click_popup3.tk_popup(event.x_root, event.y_root, 0)
-            #popup button will call delete_local_file
+
+        #proceed only if the file is tag with 'no_dl' (ie. file exist in folder)
+        #double click
+        elif tags == 'no_dl':
+            file = selected_data['values'][1] 
+            local_file = cwd + '/' + dl_folder + file
+            os.startfile(local_file)    #open the image using default system handler
+            
     except:
         pass
-
-    return
-
-#---------------------------------------------------------------------------
-
-def delete_local_file():
-    "delete the photo from the folder"
-
-    local_file = str(event_id) + '/' + req_file_to_delete
-    #if file exist, delete (should exist, else won't end up here)
-    if os.path.exists(local_file):
-        os.remove(local_file)
-        retrieve_album(0)
 
     return
 
@@ -600,8 +731,6 @@ def photo_clicked(event):
     else:
         album_download_btn.configure(state='disabled')
 
-    #report number of photos downloaded, future
-
     return
 
 #---------------------------------------------------------------------------
@@ -615,7 +744,7 @@ def album_frame_buttons(status):
     album_download_btn.configure(state=status)
     album_checkbox.configure(state=status)
     album_refresh_btn.configure(state=status)
-
+    
     return
 
 #---------------------------------------------------------------------------
@@ -648,14 +777,47 @@ def album_select_none():
 #---------------------------------------------------------------------------
 
 def album_download():
-    "download the selected photos, called from button's command"
+    "download the selected photos, called from DL button's command"
 
-    dl_list = []
+    #proceed if there are selections
     if len(photo_list.selection()) > 0:
-        for x in photo_list.selection():
-            dl_list.append(photo_list.item(x)['values'][0] - 1)
 
-        download_photos(dl_list)  #download the photos
+        #create download folder if needed
+        if not(os.path.exists(dl_folder)):
+            os.mkdir(dl_folder)
+
+        #create 00-event.txt
+        e_readme_file = dl_folder + '00-event.txt'
+        if not(os.path.exists(e_readme_file)):        
+
+            #create a text file with the event's information
+            text_file = open(e_readme_file, 'w')
+            text_file.write('Group: ' + grp_name + '\n')
+            text_file.write('Event: ' + event_name + '\n')
+
+            e_dt_str = datetime.fromtimestamp(event_time / 1000).strftime('%H:%M %d-%b-%Y')
+            text_file.write(' Date: ' + e_dt_str + '\n\n')
+
+            today_str = datetime.today().strftime('%H:%M, %d-%b-%Y')
+            text_file.write('*this file was created on: ' + today_str)
+            text_file.close()
+                
+        #loop through the selections
+        dl_list = []
+        for idx in photo_list.selection():
+            x = photo_list.item(idx)['values'][0] - 1
+
+            hires_url = album_json[x]['highres_link']
+
+            #if image is not found, add to download list
+            file = os.path.basename(hires_url)
+            local_file = dl_folder + file
+            if not(os.path.exists(local_file)):
+                dl_list.append(hires_url)
+
+        #download only if there are files to download
+        if len(dl_list):
+            download_photos(dl_list)  #download the photos
 
     return
 
@@ -666,261 +828,90 @@ def download_photos(dl_list):
 
     #setup download window
     download_win = tk.Toplevel(window)
-    download_win.title('Download Status')
     download_win.resizable(False, False)
+    download_win.overrideredirect(True)
 
-    msg_box = tk.Text(download_win, height=16, width=42)
-    msg_box.grid(row=0, column=0, padx=10, pady=10)
-    msg_box.tag_configure('err', background='red', foreground='white')
-    msg_box.tag_configure('ok', foreground='green')
-    msg_box.tag_configure('sum', foreground='blue')
+    frame = tk.Frame(download_win, highlightbackground='blue', highlightcolor='blue', highlightthickness=1)
+    frame.grid(row=0, column=0)
 
-    progress_bar = ttk.Progressbar(download_win, orient='horizontal', mode='determinate', value=0)
-    progress_bar.grid(row=1, column=0, sticky='nsew', padx=20)
+    download_msg = tk.StringVar()
+    label0 = ttk.Label(frame, textvariable=download_msg, anchor='center', width=30)
+    label0.grid(row=0, column=0, padx=20, pady=5, sticky='nsew')
+    msg = 'Downloading ' + str(len(dl_list)) + ' files'
+    download_msg.set(msg)
 
-    ok_btn = ttk.Button(download_win, text='OK', command=download_win.destroy)
-    ok_btn.grid(row=2, column=0, sticky='nsew', padx=10, pady=10)
+    download_photos.progress_bar = ttk.Progressbar(frame, orient='horizontal', mode='determinate', value=0)
+    download_photos.progress_bar.grid(row=1, column=0, sticky='nsew', padx=10)
+
+    ok_btn = ttk.Button(frame, text='OK', command=download_win.destroy)
+    ok_btn.grid(row=2, column=0, sticky='nsew', padx=60, pady=10)
     ok_btn.configure(state='disabled')
 
     position_window(download_win)
 
     #---
-    
-    #display number of files to download
-    total = len(dl_list)
-    photo_count = album_json[0]['photo_album']['photo_count']
-                                
-    msg_text = str(photo_count) + ' photos in event\'s photo album\n' + \
-               str(total) + ' photos was selected for download\n\n' + \
-               '---Downloading---\n'
-    msg_box.insert('end', msg_text, 'sum')
-    
-    window.update()     #force update
+
+    #download!
+    loop = asyncio.get_event_loop()
+    results = loop.run_until_complete( async_dl(loop, dl_list) )
 
     #---
 
-    #create download folder if needed
-    dl_folder = str(event_id) + '/'
-    if not (os.path.exists(dl_folder)):
-        os.mkdir(dl_folder)
-
-    #---
-        
-    count = 0
-    dl_count = 0
-    for x in dl_list:  #max 500 photos per album
-
-        photo = album_json[x]['id']
-        photo_filename = 'highres_' + str(photo) + '.jpeg'
-
-        msg_box.insert('end', '[{:3d}] '.format(x + 1) + photo_filename + ' - ')
-        window.update()
-
-        local_file = dl_folder + photo_filename
-        if not(os.path.exists(local_file)):
-
-            #download the photo
-            hires_link = album_json[x]['highres_link']
-            r = requests.get(url=hires_link)
-            if r.status_code == 200:
-
-                msg_box.insert('end', 'done\n', 'ok')
-
-                #write content/image to disk
-                with open(local_file, 'wb') as fd:
-                    for chunk in r.iter_content(chunk_size=128):
-                        fd.write(chunk)
-                fd.close()
-
-                #IPTCinfo when ready
-
-                #modify file access/modify time to upload date/time
-                #unable to find a way to modify the file creation date/time
-                photo_date = album_json[x]['created']
-                photo_date = int(photo_date / 1000)
-                os.utime(local_file, (photo_date, photo_date))
-
-                dl_count += 1
-
-            else:
-                msg_text = 'err: ' + str(r.status_code) + ':' + r.reason + '\n'
-                msg_box.insert('end', msg_text, 'err')
-
-        else:
-            pass
-            msg_box.insert('end', 'skipped\n')
-
-        msg_box.see('end')  #auto scroll text up
-
-        #update progress bar
-        count += 1
-        progress_bar['value'] = int(count / total * 100)
-        window.update()  #force update?
-
-    msg_box.insert('end', 'Download completed\n\n', 'ok')
-
+##    #IPTCinfo when ready
+##    #-group, event name, event date/time
+##    #-caption, uploaded by, datetime
+##    #-comments, tag on image?
+##
+##    #modify file access/modify time to upload date/time
+##    #unable to find a way to modify the file creation date/time
+##    photo_date = album_json[x]['created']
+##    photo_date = int(photo_date / 1000)
+##    os.utime(local_file, (photo_date, photo_date))
+    
     #---
     
-    #display summary
-    msg_text = '---Summary---\n' + \
-               'Download folder: ' + dl_folder + '\n' + \
-               str(dl_count) + ' photos downloaded'
-    msg_box.insert('end', msg_text, 'sum')
-    msg_box.see('end')  #auto scroll text up
-    msg_box.configure(state='disabled')
-
-    #---
-
+    download_msg.set('Download completed')
     ok_btn.configure(state='normal')
 
-    download_win.wait_window()  #wait for 'close' of window
-    window.attributes('-disabled', 0)  #enable the main window
-
+    download_win.wait_window()          #wait for 'close' of window
+    
+    window.attributes('-disabled', 0)   #enable the main window
+    
     retrieve_album(0)
 
     return
 
 #---------------------------------------------------------------------------
 
-def about_window():
+async def async_dl(loop, dl_list):
 
-    logo_b64 = "\
-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\
-tiViwvjbAAAAAElFTkSuQmCC" 
-
-    about_win = tk.Toplevel()
-    about_win.title('About')
-    about_win.resizable(False, False)
-
-    #---
-
-    frame0 = ttk.Frame(about_win)
-    frame0.grid(row=0, column=0, padx=10, pady=5)
-
-    logo_img = PhotoImage(data=logo_b64)
-    label_logo = ttk.Label(frame0, image=logo_img)
-    label_logo.grid(row=0, column=0, pady=8)
-
-    #---
+    async_dl.count = 0
+    async_dl.total = len(dl_list)
     
-    frame1 = ttk.Frame(about_win)
-    frame1.grid(row=0, column=1, padx=(0,10), pady=(15,5), sticky='n')
+    async with aiohttp.ClientSession(loop=loop) as session:
+        for url in dl_list:
+            await download_coroutine(session, url)
+            
+    return
 
-    y = 0
-    prog1 = ttk.Label(frame1, text=program_name, anchor='center')
-    prog1.grid(row=y, column=0, columnspan=2)
-    prog1.configure(font=('', 12, 'bold'))
+#---------------------------------------------------------------------------
 
-    y += 1
-    div1 = ttk.Separator(frame1, orient='horizontal')
-    div1.grid(row=y, column=0, columnspan=2, sticky='ew', pady=6)
+async def download_coroutine(session, url):
 
-    y += 1
-    prog2_0 = ttk.Label(frame1, text='Version: ' + version, foreground='blue')
-    prog2_0.grid(row=y, column=0, sticky='w')
-    prog2_0.configure(font=('', 11))
-    prog2_1 = ttk.Label(frame1, text='Release Date: ' + release_date, foreground='blue')
-    prog2_1.grid(row=y, column=1, sticky='e')
-    prog2_1.configure(font=('', 11))
+    file = os.path.basename(url)
+    local_file = dl_folder + file
 
-    y += 1
-    ok_btn = ttk.Button(frame1, text='OK', command=about_win.destroy)
-    ok_btn.grid(row=y, column=0, columnspan=2, pady=(14,0), sticky='nsew')
+    async with async_timeout.timeout(120):
+        async with session.get(url) as response:
+            with open(local_file, 'wb') as fd:
+                async for data in response.content.iter_chunked(1024):
+                    fd.write(data)
 
-    #---
-
-    position_window(about_win)
-
-    about_win.wait_window()  #wait for 'close' of window
-    window.attributes('-disabled', 0)  #enable the main window
-
+    #update progress bar
+    async_dl.count += 1
+    download_photos.progress_bar['value'] = int(async_dl.count / async_dl.total * 100)
+    window.update()  #force update?
+        
     return
 
 #---------------------------------------------------------------------------
@@ -938,7 +929,7 @@ def position_window(win_ref):
     win_ref.withdraw()  #remove the window, thus removed the flashing most of the time
 
     win_ref.update()  #force to update w & h
-    ab_w = win_ref.winfo_width()  #retreive the 'window' w & h
+    ab_w = win_ref.winfo_width()  #retrive the 'window' w & h
     ab_h = win_ref.winfo_height()
 
     x = x + (app_w / 2) - (ab_w / 2)  #calculate the x, y
@@ -946,79 +937,38 @@ def position_window(win_ref):
 
     win_ref.geometry('+%d+%d' % (x, y))  #position it!
     win_ref.deiconify()  #bring it back
+    win_ref.attributes('-topmost', 1)
 
     window.attributes('-disabled', 1)  #disabled the main window
 
+    win_ref.update()  #force update
+
     return
 
 #---------------------------------------------------------------------------
 
-def check_for_update():
-
-    url = github_url + '/raw/master/version.txt'
-    url = github_url + '/raw/dev/version.txt'
-
-    r = requests.get(url)
-    data = r.text
-
-    if r.status_code == 200:
-        (prog_ver, config_ver) = r.text.split(',')
-
-        if prog_ver > version:
-            msg = 'New version available!\n\nVersion ' + str(prog_ver)
-            mesg_box('information', 'Status', msg)
-
-        else:
-            mesg_box('information', 'Status', 'No new update available')
-    else:
-        msg = str(r.status_code) + ' : ' + r.reason
-        mesg_box('error', 'http error', msg)
-        
-    return
-
-#---------------------------------------------------------------------------
-
-def debug_info():
-
-    msg = 'Platform: ' + platform.machine().lower() + \
-          '\n: ' + platform.platform() + \
-          '\n\nPython: ' + platform.python_version() + \
-          ' / Tk: ' + str(tk.TkVersion) + \
-          '\n: ' + platform.python_build()[0] + \
-          '\n: ' + platform.python_build()[1]
-
-    mesg_box('information', 'Debug Info', msg)
-    
-    return
-
-#---------------------------------------------------------------------------
-
-def mesg_box(msg_typ, title, mesg):
+def mesg_box(msg_typ, mesg):
 
     mesgbox_win = tk.Toplevel()
-    mesgbox_win.title(title)
     mesgbox_win.resizable(False, False)
-    
+    mesgbox_win.overrideredirect(True)
+
     #---
 
-    frame = ttk.Frame(mesgbox_win)
-    frame.grid(row=0, column=0, padx=20, pady=10)
+    frame = tk.Frame(mesgbox_win, highlightbackground='blue', highlightcolor='blue', highlightthickness=1)
+    frame.grid(row=0, column=0)
 
-#    ttk.Label(frame, image="::tk::icons::question")
-#    ttk.Label(frame, image="::tk::icons::warning")
-#    ttk.Label(frame, image="::tk::icons::error")
-#    ttk.Label(frame, image="::tk::icons::information")
+    #---
 
-    icon = '::tk::icons::' + msg_typ
-    
-    label0 = ttk.Label(frame, image=icon)
-    label0.grid(row=0, column=0, sticky="nw")
+    #question,warning,error,information
+    label0 = ttk.Label(frame, image='::tk::icons::' + msg_typ)
+    label0.grid(row=0, column=0, sticky="nw", padx=10, pady=(10,0))
 
     label1 = ttk.Label(frame, text=mesg, justify='left')
-    label1.grid(row=0, column=1, padx=10)
+    label1.grid(row=0, column=1, padx=(0,20), pady=(10,0))
     
     ok_btn = ttk.Button(frame, text='OK', command=mesgbox_win.destroy)
-    ok_btn.grid(row=1, column=0, columnspan=2, pady=(10,5), sticky='ew')
+    ok_btn.grid(row=1, column=1, padx=(0,10), pady=10, sticky='e')
     
     position_window(mesgbox_win)
 
@@ -1028,6 +978,128 @@ def mesg_box(msg_typ, title, mesg):
     
     return
 
+#---------------------------------------------------------------------------
+def popup_status_window(mesg):
+    "display a pop up 'status message' window"
+    
+    popup_win = tk.Toplevel()
+    popup_win.resizable(False, False)
+    popup_win.overrideredirect(True)
+
+    frame = tk.Frame(popup_win, highlightbackground="blue", highlightcolor="blue", highlightthickness=1)
+    frame.grid(row=0, column=0)
+    
+    label = tk.Label(frame, text=mesg, padx=25, pady=10)
+    label.grid(row=0, column=0, sticky='nsew')
+
+    position_window(popup_win)
+    window.attributes('-disabled', 0)  #enable the main window
+
+    window.update()     #force update
+
+    return popup_win
+
+#---------------------------------------------------------------------------
+
+def check_for_update():
+
+    #url = github_url + '/raw/dev/version.txt'
+    url = github_url + '/raw/master/version.txt'
+
+    r = requests.get(url)
+    data = r.text
+
+    if r.status_code == 200:
+        (prog_ver, config_ver) = r.text.split(',')
+
+        if prog_ver > version:
+            msg = 'New version available!\n\nVersion ' + str(prog_ver)
+        else:
+            msg = 'Current version ' + version + '\n\nNo new update available'
+
+        mesg_box('information', msg)
+    else:
+        msg = str(r.status_code) + ' : ' + r.reason
+        mesg_box('error', msg)
+        
+    return
+
+#---------------------------------------------------------------------------
+
+def debug_info():
+
+    msg = 'Date: ' + \
+          '\n> ' + datetime.today().strftime('%d-%b-%Y') + \
+          '\n\nPlatform: ' + \
+          '\n> ' + platform.machine().lower() + \
+          '\n> ' + platform.platform() + \
+          '\n\nPython: ' + \
+          '\n> ' + platform.python_version() + ' / Tk: ' + str(tk.TkVersion) + \
+          '\n> ' + platform.python_build()[0] + \
+          '\n> ' + platform.python_build()[1]
+
+    mesg_box('information', msg)
+    
+    return
+
+#---------------------------------------------------------------------------
+
+def about_window():
+
+    about_win = tk.Toplevel()
+    about_win.resizable(False, False)
+    about_win.overrideredirect(True)
+
+    #---
+
+    frame = tk.Frame(about_win, highlightbackground='green', highlightcolor='green', highlightthickness=2)
+    frame.grid(row=0, column=0)
+
+    #---
+
+    frame0 = ttk.Frame(frame)
+    frame0.grid(row=0, column=0)
+
+    logo_img = PhotoImage(data=logo_b64)
+    label_logo = ttk.Label(frame0, image=logo_img)
+    label_logo.grid(row=0, column=0)
+
+    #---
+    
+    frame1 = ttk.Frame(frame)
+    frame1.grid(row=0, column=1, padx=(0,10), pady=(15,5), sticky='n')
+
+    y = 0
+    prog1 = ttk.Label(frame1, text=program_name, anchor='center')
+    prog1.grid(row=y, column=0)
+    prog1.configure(font=('', 12, 'bold'))
+
+    y += 1
+    div1 = ttk.Separator(frame1, orient='horizontal')
+    div1.grid(row=y, column=0, sticky='ew', pady=(0,6))
+
+    y += 1
+    prog2_0 = ttk.Label(frame1, text='Version: ' + version)
+    prog2_0.grid(row=y, column=0, sticky='w', padx=(10,0))
+
+    y += 1
+    prog2_1 = ttk.Label(frame1, text='Release Date: ' + release_date)
+    prog2_1.grid(row=y, column=0, sticky='w', padx=(10,0))
+
+    y += 1
+    ok_btn = ttk.Button(frame1, text='OK', command=about_win.destroy)
+    ok_btn.grid(row=y, column=0, pady=(0,5), sticky='e')
+
+    #---
+
+    position_window(about_win)
+
+    about_win.wait_window()             #wait for 'close' of window
+
+    window.attributes('-disabled', 0)   #enable the main window
+
+    return
+        
 #---------------------------------------------------------------------------
 
 #https://stackoverflow.com/questions/56329342/tkinter-treeview-background-tag-not-working
@@ -1044,12 +1116,19 @@ def fixed_map(option):
             elm[:2] != ('!disabled', '!selected')]
 #end-copy
 
+
+
+
+
+
+
 #---------------------------------------------------------------------------
 #window layout
 
 window = tk.Tk()
 window.title(program_name)
 window.resizable(False, False)
+window.iconphoto(True, PhotoImage(data=logo_b64))
 
 #---------------------------------------------------------------------------
 #window menu
@@ -1068,8 +1147,6 @@ help_item.add_separator()
 help_item.add_command(label='About', command=about_window)
 menu.add_cascade(label='Help', menu=help_item)
 
-#menu.add_cascade(label=30*' ')   #spacer
-
 cwd = os.getcwd()
 menu.add_cascade(label='[' + cwd + ']', command=lambda: os.startfile(cwd))
 
@@ -1085,8 +1162,7 @@ r_click_popup2 = tk.Menu(window, tearoff=0, fg='blue')
 r_click_popup2.add_command(label='Group page', command=lambda: webbrowser.open(r_click_url, 1))
 
 r_click_popup3 = tk.Menu(window, tearoff=0, fg='blue')
-r_click_popup3.add_command(label='Delete local file', command=delete_local_file)
-
+r_click_popup3.add_command(label='Photo page', command=lambda: webbrowser.open(r_click_url, 1))
 
 #------------------------------------------------------------------
 #group area
@@ -1172,7 +1248,8 @@ option_year = ttk.OptionMenu(event_frame, var_year, 'Recent', command=year_click
 option_year.grid(row=1, column=2, sticky='e')
 option_year.configure(state='disabled')
 
-event_refresh_btn = ttk.Button(event_frame, text='Refresh', command=lambda: retrieve_events(selected_year, 1))
+event_refresh_btn = ttk.Button(event_frame, text='Refresh',
+                        command=lambda: retrieve_events(selected_year, 1))
 event_refresh_btn.grid(row=1, column=3, sticky='e')
 event_refresh_btn.configure(state='disabled')
 
@@ -1185,7 +1262,8 @@ album_frame.grid(row=0, column=1, rowspan=3, padx=5, pady=4, sticky='nw')
 #---
 
 y=0
-album_folder_btn = ttk.Button(album_frame, text='DL folder', command=lambda: os.startfile(os.path.realpath(str(event_id))))
+album_folder_btn = ttk.Button(album_frame, text='DL folder',
+                        command=lambda: os.startfile(os.path.realpath(dl_folder)))
 album_folder_btn.grid(row=y, column=0, sticky='nsew')
 album_folder_btn.configure(state='disabled')
 
@@ -1205,10 +1283,12 @@ album_download_btn.configure(state='disabled')
 
 y += 1
 lb_header = ['No', 'Photo', 'Date', 'Time', 'Uploaded by']
-photo_list = ttk.Treeview(columns=lb_header, show='headings', selectmode='extended', height=27, padding='6 6 6 6')
+photo_list = ttk.Treeview(columns=lb_header, show='headings',
+                        selectmode='extended', height=27, padding='6 6 6 6')
 photo_list.grid(row=y, column=0, columnspan=4, in_=album_frame)
 photo_list.bind('<ButtonRelease-1>', photo_clicked)
 photo_list.bind('<Button-3>', photo_r_clicked)
+photo_list.bind('<Double-Button-1>', photo_r_clicked)
 
 photo_list.column('No', width=40, anchor='e')
 photo_list.column('Photo', width=160, anchor='center')
@@ -1236,7 +1316,8 @@ album_checkbox = ttk.Checkbutton(album_frame, text='All Photos',
 album_checkbox.grid(row=y, column=2, sticky='e')
 album_checkbox.configure(state='disabled')
 
-album_refresh_btn = ttk.Button(album_frame, text='Refresh', command=lambda: retrieve_album(1))
+album_refresh_btn = ttk.Button(album_frame, text='Refresh',
+                        command=lambda: retrieve_album(1))
 album_refresh_btn.grid(row=y, column=3, sticky='e')
 album_refresh_btn.configure(state='disabled')
 
@@ -1252,20 +1333,22 @@ style.configure('Treeview.Heading', foreground='blue')
 #---
 
 #postion main window in the middle of the screen
-ws = window.winfo_screenwidth()  #width of the screen
-hs = window.winfo_screenheight()  #height of the screen
+ws = window.winfo_screenwidth()     #width of the screen
+hs = window.winfo_screenheight()    #height of the screen
 
-window.withdraw()  #remove window, to reduce window flashing due reposition most of the time
+#remove window; to reduce window flashing due to reposition (most of the time)
+window.withdraw()
 
 window.update()  #force update, to update window w & h
-app_w = window.winfo_width()  #retreive window w & h
+app_w = window.winfo_width()    #retrieve window w & h
 app_h = window.winfo_height()
 
-x = (ws / 2) - (app_w / 2)  #calculate the x, y
+x = (ws / 2) - (app_w / 2)      #calculate the x, y
 y = (hs / 2) - (app_h / 2)
 
 window.geometry('+%d+%d' % (x, y))  #position it!
-window.deiconify()  #bring up the window
+window.deiconify()          #bring up the window
+
 
 
 #------------------------------------------------------------------
@@ -1273,13 +1356,11 @@ window.deiconify()  #bring up the window
 
 headers = retrieve_token()  #set header (access token)
 if headers == '':
-    msg = 'Unable to retreive access token!!\n\nplease run "tk-mpd-config.py"'
-    mesg_box('error', 'Error', msg)
+    msg = 'Unable to retrieve access token.\n\nplease run "tk-mpd-config.py"'
+    mesg_box('error', msg)
     window.destroy()
 else:
-
     #member_name = user_profile(0)
-
     retrieve_group(0)
 
     window.mainloop()
