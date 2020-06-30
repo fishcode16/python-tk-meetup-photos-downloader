@@ -1,6 +1,6 @@
 ![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/logo.png "Logo")
 
-# Python/Tk Meetup Photos Downloader / 14-Jun-2020 #
+# Python/Tk Meetup Photos Downloader / Version 1.1 / 01-Jul-2020 #
 
 ## Description ##
 Python/Tk Meetup Photos Downloader was created to help you download your meetup events' photos easily.
@@ -22,14 +22,16 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
 
 ## Installation ##
   1. Install Python
-  2. Download the 2 files (tk-mpd-config.py & tk-mpd.py) into a folder
+  2. Install Python module ($ pip install aiohttp)
+  3. Download the application zip file
+  4. Unzip
      * __IMPORTANT:__ ensure the folder is not accessible by others
 
 ## Configuration ##
   1. Login to [Meetup](https://www.meetup.com/)
   2. Visit [Meetup API](https://www.meetup.com/meetup_api/) website
   3. Apply for your [OAuth Consumers](https://secure.meetup.com/meetup_api/oauth_consumers/) key 
-     * __INFO:__ Very likely your application will be rejected unless you have a [Meetup PRO account](https://www.meetup.com/lp/meetup-pro)
+     * __FYI:__ Very likely your application will be rejected unless you have a [Meetup PRO account](https://www.meetup.com/lp/meetup-pro)
   4. Setup your OAuth Consumers
   5. Run *tk-mpd-config.py*
   6. Read the [HOWTO-CONFIG](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/HOWTO-CONFIG.md)
@@ -39,21 +41,31 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
   * Select the group
   * Select the event
   * Select the photos
-  * Click download 
+  * Click download
 
-## Notes ##
-  * All downloaded contents and cache files are located in the application directory
-  * Important data files:
-    * access.json (your meetup's access token)
-    * user.json (your user information)
-    * groups.json (your subscribed groups)
-    * gid-xxxxxxxxx/ (group directory. group's events & albums information stored here)
-      * events-YYYY.json (year's events)
-      * events.json (recent events)
-      * album-xxxxxxxxx.json (photo album information)
+__FYI:__ No scrollbar, use the mouse's scroll wheel :/
 
+
+### Directories and data files
+    .
+    ├── config.json                      # application configuration
+    ├── access.json                      # your meetup's access token
+    ├── download/                        # download folder
+    │   └── album-xxxxxxxxx/             # photos for event (xxxxxxxxx event ID)
+    │       ├── 00-event.txt             # event information (human readable format)
+    │       ├── hires_.....jpeg          # downlaoded photo
+    │       └── ...
+    ├── group_data/                      # your group information
+    │   ├── groups.json                  # your subscribed groups (json downloaded from meetup)
+    │   └── gid-xxxxxxxxx/               # group's events & albums information (xxxxxxxxx group's ID)
+    │       ├── 00-group.txt             # group information (human readable format)
+    │       ├── events-YYYY.json         # yearly events data (YYYY year)
+    │       ├── events.json              # recent events data
+    │       ├── album-xxxxxxxxx.json     # photo album information (xxxxxxxxx event's ID)
+    │       └── ...
+
+    
 ## Future ##
-  * asyncio download
   * IPTC tag on downloaded photo
 
 ___
