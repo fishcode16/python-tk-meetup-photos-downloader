@@ -45,23 +45,26 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
 
 __FYI:__ No scrollbar, use the mouse's scroll wheel :/
 
-## Notes ##
-  * All downloaded contents and cache files are located in the application directory
-  * Important data files:
-    * config.json (configuration)
-    * access.json (your meetup's access token)
-    * user.json (your meetup's user information)
-    * group_data/ (contain your group information)
-      * groups.json (your subscribed groups)
-      * gid-xxxxxxxxx/ (group directory. group's events & albums information stored here)
-        * 00-group.txt (contain group name, creation date and country. human readable format)
-        * events-YYYY.json (year's events)
-        * events.json (recent events)
-        * album-xxxxxxxxx.json (photo album information)
-    * download/ (photos are downloaded here)
-      * album-xxxxxxxxx/ (downloaded photos)
-        * 00-event.txt (contain group name, event name and date/time. human readable format)
 
+### Directories and data files
+    .
+    ├── config.json                      # application configuration
+    ├── access.json                      # your meetup's access token
+    ├── download/                        # download folder
+    │   └── album-xxxxxxxxx/             # photos for event (xxxxxxxxx event ID)
+    │       ├── 00-event.txt             # event information (human readable format)
+    │       ├── hires_.....jpeg          # downlaoded photo
+    │       └── ...
+    ├── group_data/                      # your group information
+    │   ├── groups.json                  # your subscribed groups (json downloaded from meetup)
+    │   └── gid-xxxxxxxxx/               # group's events & albums information (xxxxxxxxx group's ID)
+    │       ├── 00-group.txt             # group information (human readable format)
+    │       ├── events-YYYY.json         # yearly events data (YYYY year)
+    │       ├── events.json              # recent events data
+    │       ├── album-xxxxxxxxx.json     # photo album information (xxxxxxxxx event's ID)
+    │       └── ...
+
+    
 ## Future ##
   * IPTC tag on downloaded photo
 
