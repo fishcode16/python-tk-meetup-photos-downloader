@@ -1,6 +1,6 @@
 ![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/logo.png "Logo")
 
-# Python/Tk Meetup Photos Downloader / Version 1.1 / xx-xxx-2020 #
+# Python/Tk Meetup Photos Downloader / Version 1.1 / 01-Jul-2020 #
 
 ## Description ##
 Python/Tk Meetup Photos Downloader was created to help you download your meetup events' photos easily.
