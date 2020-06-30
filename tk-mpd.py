@@ -18,11 +18,11 @@ import async_timeout
 #-------------------------------------------------------------------------
 #global variables
 version = '1.1'
-release_date = '29-Jun-2020'
+release_date = '01-Jul-2020'
 program_name = 'Python/Tk Meetup Photos Downloader'
 github_url = 'https://github.com/fishcode16/python-tk-meetup-photos-downloader'
 
-meetup_api = 'https://api.meetup.com'
+meetup_api = 'https://api.meetup.com/'
 selected_year = 'Recent'
 
 logo_b64 = "\
@@ -230,7 +230,7 @@ def load_json(meetup_url, params, json_file, max_hr, force_update):
 def user_profile(force_update):
     "retrieve member's profile, unused"
 
-    meetup_url = meetup_api + '/members/self'
+    meetup_url = meetup_api + 'members/self'
     user_file = 'user.json'
     user_json = load_json(meetup_url, '', user_file, 4320, force_update)
 
@@ -240,13 +240,40 @@ def user_profile(force_update):
 
 #-------------------------------------------------------------------------
 
+def init_app():
+    "create application's directories and default config file"
+
+    #create default directory 
+    for folder in ('group_data', 'download'):
+        if not(os.path.exists(folder)):
+            os.mkdir(folder)
+    
+    #create config file
+    config_file = 'config.json'
+    if not(os.path.exists(config_file)):
+        config_json = {}
+        config_json['iptc_tag'] = False
+        config_json['mtime_tag'] = True
+
+        #save data/json to file
+        text_file = open(config_file, 'w')
+        text_file.write(json.dumps(config_json, indent=4))
+        text_file.close()
+
+    #load config json
+    data = json.loads((open(config_file).read()))
+
+    return data
+
+#-------------------------------------------------------------------------
+
 def retrieve_group(force_update):
     "retrieve member's subscribed groups"
 
     global group_json
 
-    meetup_url = meetup_api + '/self/groups'
-    group_file = 'groups.json'
+    meetup_url = meetup_api + 'self/groups'
+    group_file = 'group_data/groups.json'
     group_json = load_json(meetup_url, '', group_file, 72, force_update)
 
     clear_group_frame()
@@ -254,7 +281,7 @@ def retrieve_group(force_update):
     clear_album_frame()
 
     g_list = []
-    for x in range(200):  #meetup return 200?
+    for x in range(200):  #meetup return max 200?
         try:
             #populate the group list / treeview
             g_name    = group_json[x]['name']
@@ -265,13 +292,13 @@ def retrieve_group(force_update):
 
             #create group directory (gid)
             g_id     = group_json[x]['id']
-            g_folder = 'gid-' + str(g_id)
+            g_folder = 'group_data/gid-' + str(g_id) + '/'
 
             if not(os.path.exists(g_folder)):
-                os.mkdir(g_folder)
+                os.makedirs(g_folder)
 
             #create 00-group.txt
-            g_readme_file = g_folder + '/00-group.txt'
+            g_readme_file = g_folder + '00-group.txt'
             if not(os.path.exists(g_folder)):
 
                 #create a text file with the group's information
@@ -325,7 +352,8 @@ def group_clicked(event):
 
     global grp_id, grp_name, grp_url
     global selected_year
-
+    global r_click_url_xx
+    
     try:
         #selected item (treeview)
         x = group_list.focus()
@@ -342,6 +370,8 @@ def group_clicked(event):
             grp_id   = group_json[g_index]['id']
             grp_name = group_json[g_index]['name']
             grp_url  = group_json[g_index]['urlname']
+
+            r_click_url_xx = 'https://www.meetup.com/' + grp_url + '/photos/'
 
             #delete the list
             option_year['menu'].delete(0, 'end')
@@ -397,8 +427,8 @@ def retrieve_events(year, force_update):
 
     global events_json
 
-    meetup_url = meetup_api + '/' + grp_url + '/events'
-    g_folder = 'gid-' + str(grp_id) + '/'
+    meetup_url = meetup_api + grp_url + '/events'
+    g_folder = 'group_data/gid-' + str(grp_id) + '/'
 
     if year == 'Recent':
         events_file = g_folder + 'events.json'
@@ -522,7 +552,7 @@ def event_clicked(event):
             event_name = events_json[e_index]['name'].strip()
             event_time = events_json[e_index]['time']
 
-            dl_folder = 'photos-' + str(event_id) + '/'
+            dl_folder = 'download/album-' + str(event_id) + '/'
 
             #if no photos in the event
             if photo_count:
@@ -543,14 +573,19 @@ def event_r_clicked(event):
     global r_click_url, r_click_album_url
 
     x = event_list.identify_row(event.y)
-    if x:
+    if x:     
         selected_data = event_list.item(x)
+        event_list.selection_set(x)     #highlight the selection
+        event_list.focus(x)             #set focus
+
+        event_clicked(0)        #refresh album frame
+        
         g_index = selected_data['values'][0]
         r_click_url = events_json[g_index]['link']
 
         try:
             id = events_json[g_index]['photo_album']['id']
-            r_click_album_url = 'https://www.meetup.com/' + grp_url + '/photos/all_photos/?photoAlbumId=' + str(id)
+            r_click_album_url = r_click_url_xx + 'all_photos/?photoAlbumId=' + str(id)
             r_click_popup1.entryconfig('Album Page', state='normal')
 
         except:
@@ -606,8 +641,9 @@ def retrieve_album(force_update):
         max_hr = 6
 
     #retrieve event's photo album
-    meetup_url = meetup_api + '/' + grp_url + '/events/' + str(event_id) + '/photos'
-    album_file = 'gid-' + str(grp_id) + '/album-' + str(event_id) + '.json'
+    meetup_url = meetup_api + grp_url + '/events/' + str(event_id) + '/photos'
+    g_folder   = 'group_data/gid-' + str(grp_id) + '/'
+    album_file = g_folder + 'album-' + str(event_id) + '.json'
     album_json = load_json(meetup_url, '', album_file, max_hr, force_update)
    
     clear_album_frame()
@@ -697,14 +733,18 @@ def photo_r_clicked(event):
 
     try:
         x = photo_list.identify_row(event.y)
+        photo_list.selection_set(x)     #highlight the selection
+        photo_list.focus(x)             #set focus
+        
         selected_data = photo_list.item(x)
         index = selected_data['values'][0]
         tags  = selected_data['tags'][0]
-        
+
         if event.num == 3:      #1 = double clicked; 3 = right clicked
             photo_id = album_json[index-1]['id']
             photo_album_id = album_json[index-1]['photo_album']['id']
-            r_click_url = 'https://www.meetup.com/' + grp_url + '/photos/' + str(photo_album_id) + '/' + str(photo_id)
+            r_click_url = r_click_url_xx + str(photo_album_id) + '/' + str(photo_id)
+            
             r_click_popup3.tk_popup(event.x_root, event.y_root, 0)
 
         #proceed only if the file is tag with 'no_dl' (ie. file exist in folder)
@@ -804,21 +844,42 @@ def album_download():
                 
         #loop through the selections
         dl_list = []
-        for idx in photo_list.selection():
-            x = photo_list.item(idx)['values'][0] - 1
+        dl_list_idx = []
+        for x in photo_list.selection():
+            index     = photo_list.item(x)['values'][0] - 1
+            hires_url = album_json[index]['highres_link']
 
-            hires_url = album_json[x]['highres_link']
-
-            #if image is not found, add to download list
+            #if file/image is not found, add to download list
             file = os.path.basename(hires_url)
             local_file = dl_folder + file
             if not(os.path.exists(local_file)):
                 dl_list.append(hires_url)
+                dl_list_idx.append([index, local_file])
 
         #download only if there are files to download
         if len(dl_list):
-            download_photos(dl_list)  #download the photos
+            download_photos(dl_list)  #download the photos!!
 
+            #loop thru the downloaded files
+            for (index, local_file) in dl_list_idx:
+
+                #set IPTC tag
+                if iptc_tag.get():
+                    #print('set IPTC tag')
+                    #IPTCinfo when ready (failed with images from meetup)
+                    #-group, event name, event date/time
+                    #-caption, uploaded by, datetime
+                    #-comments, tag on image?
+                    pass
+
+                #modify file's access time
+                if mtime_tag.get():
+                    #modify file access/modify time to upload date/time
+                    #unable to find a way to modify the file creation date/time
+                    photo_date = album_json[index]['created']
+                    photo_date = int(photo_date / 1000)
+                    os.utime(local_file, (photo_date, photo_date))
+                                
     return
 
 #---------------------------------------------------------------------------
@@ -856,25 +917,11 @@ def download_photos(dl_list):
     results = loop.run_until_complete( async_dl(loop, dl_list) )
 
     #---
-
-##    #IPTCinfo when ready
-##    #-group, event name, event date/time
-##    #-caption, uploaded by, datetime
-##    #-comments, tag on image?
-##
-##    #modify file access/modify time to upload date/time
-##    #unable to find a way to modify the file creation date/time
-##    photo_date = album_json[x]['created']
-##    photo_date = int(photo_date / 1000)
-##    os.utime(local_file, (photo_date, photo_date))
-    
-    #---
     
     download_msg.set('Download completed')
     ok_btn.configure(state='normal')
 
     download_win.wait_window()          #wait for 'close' of window
-    
     window.attributes('-disabled', 0)   #enable the main window
     
     retrieve_album(0)
@@ -935,6 +982,8 @@ def position_window(win_ref):
     x = x + (app_w / 2) - (ab_w / 2)  #calculate the x, y
     y = y + (app_h / 2) - (ab_h / 2)
 
+    x += 22     #offset (manually calculated)
+    
     win_ref.geometry('+%d+%d' % (x, y))  #position it!
     win_ref.deiconify()  #bring it back
     win_ref.attributes('-topmost', 1)
@@ -971,14 +1020,13 @@ def mesg_box(msg_typ, mesg):
     ok_btn.grid(row=1, column=1, padx=(0,10), pady=10, sticky='e')
     
     position_window(mesgbox_win)
-
-    mesgbox_win.wait_window()  #wait for 'close' of window
-    
-    window.attributes('-disabled', 0)  #enable the main window
+    mesgbox_win.wait_window()           #wait for 'close' of window
+    window.attributes('-disabled', 0)   #enable the main window
     
     return
 
 #---------------------------------------------------------------------------
+
 def popup_status_window(mesg):
     "display a pop up 'status message' window"
     
@@ -1002,11 +1050,11 @@ def popup_status_window(mesg):
 #---------------------------------------------------------------------------
 
 def check_for_update():
-
-    #url = github_url + '/raw/dev/version.txt'
+    "compare program's version with github"
+    
     url = github_url + '/raw/master/version.txt'
-
     r = requests.get(url)
+
     data = r.text
 
     if r.status_code == 200:
@@ -1027,16 +1075,17 @@ def check_for_update():
 #---------------------------------------------------------------------------
 
 def debug_info():
-
-    msg = 'Date: ' + \
-          '\n> ' + datetime.today().strftime('%d-%b-%Y') + \
-          '\n\nPlatform: ' + \
-          '\n> ' + platform.machine().lower() + \
-          '\n> ' + platform.platform() + \
-          '\n\nPython: ' + \
-          '\n> ' + platform.python_version() + ' / Tk: ' + str(tk.TkVersion) + \
-          '\n> ' + platform.python_build()[0] + \
-          '\n> ' + platform.python_build()[1]
+    "display some information, hopefully could assist to debug bugs for user"
+    
+    msg = 'Date:\n' + \
+        '> ' + datetime.today().strftime('%d-%b-%Y') + '\n\n' + \
+        'Platform:\n' + \
+        '> ' + platform.machine().lower() + '\n' + \
+        '> ' + platform.platform() + '\n\n' + \
+        'Python:\n' + \
+        '> ' + platform.python_version() + ' / Tk: ' + str(tk.TkVersion) + '\n' + \
+        '> ' + platform.python_build()[0] + '\n' + \
+        '> ' + platform.python_build()[1]
 
     mesg_box('information', msg)
     
@@ -1045,7 +1094,8 @@ def debug_info():
 #---------------------------------------------------------------------------
 
 def about_window():
-
+    "an about window"
+    
     about_win = tk.Toplevel()
     about_win.resizable(False, False)
     about_win.overrideredirect(True)
@@ -1093,13 +1143,30 @@ def about_window():
     #---
 
     position_window(about_win)
-
     about_win.wait_window()             #wait for 'close' of window
-
     window.attributes('-disabled', 0)   #enable the main window
 
     return
-        
+
+#---------------------------------------------------------------------------
+
+def app_close():
+    "save config before shutdown/close window"
+   
+    config_file = 'config.json'
+    
+    config_json['iptc_tag']  = iptc_tag.get()
+    config_json['mtime_tag'] = mtime_tag.get()
+
+    #save data/json to file
+    text_file = open(config_file, 'w')
+    text_file.write(json.dumps(config_json, indent=4))
+    text_file.close()
+
+    window.destroy()
+
+    return
+
 #---------------------------------------------------------------------------
 
 #https://stackoverflow.com/questions/56329342/tkinter-treeview-background-tag-not-working
@@ -1119,8 +1186,11 @@ def fixed_map(option):
 
 
 
+#---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
 
-
+config_json = init_app()
 
 #---------------------------------------------------------------------------
 #window layout
@@ -1129,6 +1199,7 @@ window = tk.Tk()
 window.title(program_name)
 window.resizable(False, False)
 window.iconphoto(True, PhotoImage(data=logo_b64))
+window.protocol('WM_DELETE_WINDOW', app_close)
 
 #---------------------------------------------------------------------------
 #window menu
@@ -1136,8 +1207,21 @@ window.iconphoto(True, PhotoImage(data=logo_b64))
 menu = tk.Menu(window)
 
 file_item = tk.Menu(menu, tearoff=0)
-file_item.add_command(label='Exit', command=lambda: window.destroy())
+file_item.add_command(label='Exit', command=app_close)
 menu.add_cascade(label='File', menu=file_item)
+
+#---
+
+iptc_tag = tk.BooleanVar()
+config_item = tk.Menu(menu, tearoff=0)
+config_item.add_checkbutton(label='IPTC tag', onvalue=1, offvalue=0, variable=iptc_tag)
+iptc_tag.set(config_json['iptc_tag'])
+mtime_tag = tk.BooleanVar()
+config_item.add_checkbutton(label='Modify file access time', onvalue=1, offvalue=0, variable=mtime_tag)
+mtime_tag.set(config_json['mtime_tag'])
+menu.add_cascade(label='Config', menu=config_item)
+
+#---
 
 help_item = tk.Menu(menu, tearoff=0)
 help_item.add_command(label='Website', command=lambda: webbrowser.open(github_url, 1))
@@ -1147,12 +1231,15 @@ help_item.add_separator()
 help_item.add_command(label='About', command=about_window)
 menu.add_cascade(label='Help', menu=help_item)
 
+#---
+
 cwd = os.getcwd()
 menu.add_cascade(label='[' + cwd + ']', command=lambda: os.startfile(cwd))
 
 window.configure(menu=menu)
 
-#---
+#------------------------------------------------------------------
+#right click/pop up menu
 
 r_click_popup1 = tk.Menu(window, tearoff=0, fg='blue')
 r_click_popup1.add_command(label='Event page', command=lambda: webbrowser.open(r_click_url, 1))
@@ -1347,7 +1434,7 @@ x = (ws / 2) - (app_w / 2)      #calculate the x, y
 y = (hs / 2) - (app_h / 2)
 
 window.geometry('+%d+%d' % (x, y))  #position it!
-window.deiconify()          #bring up the window
+window.deiconify()                  #bring up the window
 
 
 
