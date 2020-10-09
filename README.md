@@ -16,9 +16,13 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
   * High Resolution photos
   * Meetup API version 3
 
-## Developed and tested on ##
-  * Python 3.8.0
-  * Windows 10 64-bit
+## Developed on ##
+  * Python 3.8.0 (32-bit)
+  * Windows 10 (64-bit)
+
+## Tested on ##
+  * Python 3.8.5 (32-bit)
+  * Python 3.8.6 (32-bit)
 
 ## Installation ##
   1. Install [Python](https://www.python.org/)
