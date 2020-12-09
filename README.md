@@ -61,6 +61,7 @@ __FYI:__ No scrollbar, use the mouse's scroll wheel :/
     ├── download/                        # download folder
     │   └── album-xxxxxxxxx/             # photos for event (xxxxxxxxx event ID)
     │       ├── 00-event.txt             # event information (human readable format)
+    │       ├── 00-photos.txt            # photos index of the album (uploader, date/time)
     │       ├── hires_.....jpeg          # downlaoded photo
     │       └── ...
     ├── group_data/                      # your group information
@@ -68,7 +69,7 @@ __FYI:__ No scrollbar, use the mouse's scroll wheel :/
     │   └── gid-xxxxxxxxx/               # group's events & albums information (xxxxxxxxx group's ID)
     │       ├── 00-group.txt             # group information (human readable format)
     │       ├── events-YYYY.json         # yearly events data (YYYY year)
-    │       ├── events.json              # recent events data
+    │       ├── events-Recent.json       # recent events data
     │       ├── album-xxxxxxxxx.json     # photo album information (xxxxxxxxx event's ID)
     │       └── ...
 
