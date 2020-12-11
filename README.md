@@ -33,7 +33,7 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
      * $ pip install aiohttp[speedups]
   3. Download the application zip file
   4. Unzip
-     * __IMPORTANT:__ ensure the folder is not accessible by others
+     * __IMPORTANT:__ ensure the folder is only accessible by the user
 
 ## Configuration ##
   1. Login to [Meetup](https://www.meetup.com/)
@@ -50,9 +50,6 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
   * Select the event
   * Select the photos
   * Click download
-
-__FYI:__ No scrollbar, use the mouse's scroll wheel :/
-
 
 ### Directories and data files
     .
