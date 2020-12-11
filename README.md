@@ -41,11 +41,11 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
   3. Apply for your [OAuth Consumers](https://secure.meetup.com/meetup_api/oauth_consumers/) key 
      * __FYI:__ Very likely your application will be rejected unless you have a [Meetup PRO account](https://www.meetup.com/lp/meetup-pro)
   4. Setup your OAuth Consumers
-  5. Run *tk-mpd-config.py*
+  5. Run *tk-mpd-config.pyw*
   6. Read the [HOWTO-CONFIG](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/HOWTO-CONFIG.md)
 
 ## Usage ##
-  * Run *tk-mpd.py*
+  * Run *tk-mpd.pyw*
   * Select the group
   * Select the event
   * Select the photos
