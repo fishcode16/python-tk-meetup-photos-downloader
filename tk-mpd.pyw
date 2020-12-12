@@ -1,29 +1,3 @@
-# 1.21
-# - Disabled the "IPTC" option, since it is not functional yet
-# - Added encoding='utf_16' to file write/read (for group/event json).
-# - (FIX) Current year event list at event frame are auto update more
-#     frequently as compared to older yearly event list.
-# - Added an option to create a photo index (text file) in the download folder
-# - Enable the download button, only when selections has photos to be download
-# - GUI changes
-#   - use ttk theme
-#   - Enable sorting on Group/Event/Album frame
-#   - Added scrollbar for Group/Event/Album frame
-#   - Removed update window, move it to status bar
-#   - Remove debug_info window, combined with About window
-# - Changed the 'Last Updated Message', to be more human friendly
-#    (y day, z month instead of x hrs)
-# - major code formatting clean up, PEP8, pylint, yapf
-#   - Replace single quote with double quote
-# - (FIX) application will fail with missing configuration item
-# - Display an error message when user has no joined groups
-#
-# (BUG) event & photo list (via photo count) need to be in-sync (detect diff)
-# (FUTURE) [event frame] search for event
-# (FUTURE) maintain sorting order, on Event/Album frame, when state change on checkbox
-# - (FUTURE) Header background
-# - (FUTURE) mouseover text
-
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import PhotoImage
