@@ -7,6 +7,15 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
 
 *Concept/idea was from [Ken Courville](https://github.com/krcourville/meetup-photo-download)'s program, which was no longer functional.*
 
+## Table of Content ##
+1. [Features](#features)
+2. [Installation](#installation)
+3. [Configuration](#configuration)
+4. [Usage](#usage)
+5. [Directories and data files](#directories-and-data-files)
+6. [Future](#future)
+7. [Screenshots](#screenshots)
+
 ## Features ##
   * Quick and easy selection of event and photos
     * Event/photos since group creation
@@ -54,7 +63,7 @@ $ pip install aiohttp[speedups]
   * Select the photos
   * Click download
 
-### Directories and data files
+## Directories and data files
     .
     ├── config.json                      # application configuration
     ├── access.json                      # your meetup's access token
