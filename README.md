@@ -1,11 +1,9 @@
 ![alt text](https://github.com/fishcode16/python-tk-meetup-photos-downloader/blob/master/images/logo.png "Logo")
 
-# Python/Tk Meetup Photos Downloader / Version 1.2 / (12-Dec-2020) #
+# Python/Tk Meetup Photos Downloader / Version 1.3 / (DD-MMM-2021) #
 
 ## Description ##
 Python/Tk Meetup Photos Downloader was created to help you download your meetup events' photos easily.
-
-*Concept/idea was from [Ken Courville](https://github.com/krcourville/meetup-photo-download)'s program, which was no longer functional.*
 
 ## Table of Content ##
 1. [Features](#features)
