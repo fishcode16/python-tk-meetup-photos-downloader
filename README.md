@@ -29,8 +29,11 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
 ## Installation ##
   1. Install [Python](https://www.python.org/)
   2. Install Python module
-     * $ pip install urllib3
-     * $ pip install aiohttp[speedups]
+```sh
+$ pip install urllib3
+$ pip install aiohttp[speedups]
+```
+
   3. Download the application zip file
   4. Unzip
      * __IMPORTANT:__ ensure the folder is only accessible by the user
