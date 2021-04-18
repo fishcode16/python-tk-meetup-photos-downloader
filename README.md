@@ -28,10 +28,8 @@ Python/Tk Meetup Photos Downloader was created to help you download your meetup 
   * Windows 10 (64-bit)
 
 ## Tested on ##
-  * Python 3.8.0 (32-bit)
-  * Python 3.8.5 (32-bit)
-  * Python 3.8.6 (32-bit)
-  * Python 3.9.0 (32-bit)
+  * Python 3.8.X
+  * Python 3.9.X
 
 ## Installation ##
   1. Install [Python](https://www.python.org/)
